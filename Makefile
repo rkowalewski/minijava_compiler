@@ -1,5 +1,6 @@
-JFLEX = /soft/IFI/lang/jflex-1.4.1/bin/jflex
-JAVACUPJAR = /soft/IFI/lang/java-cup/java-cup-v11a.jar
+JFLEX = $(CURDIR)/lib/jflex-1.4.1/bin/jflex
+JAVACUPJAR = $(CURDIR)/lib/java-cup-11a.jar
+
 JAVACUP = java -jar $(JAVACUPJAR)
 
 all: straightline/Parser.java straightline/Lexer.java 
