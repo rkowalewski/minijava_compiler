@@ -93,10 +93,19 @@ non terminal StatementList;
 non terminal Statement;
 non terminal Expression;
 non terminal ExpressionList;
-non terminal IntArrayCreation;
+non terminal AndExp;
+non terminal LessThanExp;
+non terminal AdditiveExp;
+non terminal Term;
+non terminal Factor;
+non terminal NotExp;
+non terminal PostfixExp;
+non terminal PrimaryExp;
 non terminal ArrayLookup;
 non terminal ArrayLength;
-non terminal MethodInvocationOnObject;
+non terminal NewIntArray;
+non terminal NewInstance;
+non terminal MethodInvocationOnInstance;
 non terminal MethodInvocationParameterList;
 non terminal Type;
 non terminal Identifier;
@@ -141,7 +150,7 @@ ClassDeclarationList ::=
 VarDeclarationList ::=
     {: :}
   |
-    VarDeclaration:v VarDeclarationList:l
+    VarDeclarationList:l VarDeclaration:v
     {: :}
 ;
 
@@ -214,33 +223,75 @@ Statement   ::=
 ;
 
 Expression ::=
-    Expression:arg1 MINUS Expression:arg2
+    AndExp:a
+    {: :}
+;
+
+AndExp ::=
+    LessThanExp:i AND AndExp:a
     {: :}
   |
-    Expression:arg1 MINUS Expression:arg2
+    LessThanExp:i
+    {: :}
+;
+
+LessThanExp ::=
+    AdditiveExp LT AdditiveExp
     {: :}
   |
-    Expression:arg1 TIMES Expression:arg2
+    AdditiveExp
+    {: :}
+;
+
+AdditiveExp ::=
+    Term:lhs PLUS AdditiveExp:rhs
     {: :}
   |
-    Expression:arg1 DIVIDE Expression:arg2
+    Term:lhs MINUS AdditiveExp:rhs
     {: :}
   |
-    Expression:arg1 LT Expression:arg2
+    Term:lhs
+    {: :}
+;
+
+Term ::=
+    Factor:lhs TIMES Term:rhs
     {: :}
   |
-    Expression:arg1 AND Expression:arg2
+    Factor:lhs DIVIDE Term:rhs
+    {: :}
+  |
+    Factor:lhs
+    {: :}
+;
+
+Factor ::=
+    NotExp:n
+    {: :}
+  |
+    PostfixExp:p
+    {: :}
+;
+
+NotExp ::=
+    NOT PostfixExp:p
+    {: :}
+;
+
+PostfixExp ::=
+    ArrayLookup:i
     {: :}
   |
     ArrayLength:l
     {: :}
   |
-    ArrayLookup:r
+    MethodInvocationOnInstance:m
     {: :}
   |
-    MethodInvocationOnObject:m
-    {: :}
-  |
+    PrimaryExp:p
+;
+
+PrimaryExp ::=
     INTEGER_LITERAL:i
     {: :}
   |
@@ -250,42 +301,44 @@ Expression ::=
     FALSE:f
     {: :}
   |
-    IDENTIFIER:i
+    Identifier:i
     {: :}
   |
     THIS:t
     {: :}
   |
-    IntArrayCreation:a
+    NewIntArray:a
     {: :}
   |
-    NEW:n Identifier:i LPAREN RPAREN
-    {: :}
-  |
-    NOT:not Expression:expr
+    NewInstance:o
     {: :}
   |
     LPAREN Expression:expr RPAREN
     {: :}
 ;
 
-IntArrayCreation ::=
+NewIntArray::=
     NEW:n TYPE_INT LSQUARE Expression:e RSQUARE
     {: :}
 ;
 
 ArrayLength ::=
-    Expression:e DOT ARRLEN
+    PrimaryExp:e DOT ARRLEN
     {: :}
 ;
 
 ArrayLookup ::=
-    Expression:e LSQUARE Expression:i RSQUARE
+    PrimaryExp:e LSQUARE Expression:i RSQUARE
     {: :}
 ;
 
-MethodInvocationOnObject ::=
-    Expression:e DOT Identifier:id MethodInvocationParameterList:l
+NewInstance ::=
+    NEW:n Identifier:i LPAREN RPAREN
+    {: :}
+;
+
+MethodInvocationOnInstance ::=
+    PrimaryExp:e DOT Identifier:id MethodInvocationParameterList:l
     {: :}
 ;
 
@@ -302,7 +355,7 @@ Type ::=
     {: :}
   |
     TYPE_BOOLEAN:b
-    {: RESULT = new BooleanType(bleft); :}
+    {: :}
   |
     TYPE_INT:i
     {: :}
