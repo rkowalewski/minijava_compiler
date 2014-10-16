@@ -51,17 +51,45 @@ ws=[\r\n\t\ ]*
 <YYINITIAL> {
    {ws}     { }
    ","      { return symbol(Parser_sym.COMMA); }
+   "."      { return symbol(Parser_sym.DOT); }
    ";"      { return symbol(Parser_sym.SEMICOLON); }
+   "!"      { return symbol(Parser_sym.NOT); }
+   "&&"     { return symbol(Parser_sym.AND); }
    "("      { return symbol(Parser_sym.LPAREN); }
    ")"      { return symbol(Parser_sym.RPAREN); }
+   "["      { return symbol(Parser_sym.LSQUARE); }
+   "]"      { return symbol(Parser_sym.RSQUARE); }
+   "{"      { return symbol(Parser_sym.LCURLY); }
+   "}"      { return symbol(Parser_sym.RCURLY); }
    "+"      { return symbol(Parser_sym.PLUS); }
    "-"      { return symbol(Parser_sym.MINUS); }
    "*"      { return symbol(Parser_sym.TIMES); }
    "/"      { return symbol(Parser_sym.DIVIDE); }
-   "="      { return symbol(Parser_sym.EQ); }
-   "print"  { return symbol(Parser_sym.PRINT); }
+   "="      { return symbol(Parser_sym.BECOMES); }
+   "<"      { return symbol(Parser_sym.LT); }
+   "class"  { return symbol(Parser_sym.CLASS); }
+   "public" { return symbol(Parser_sym.PUBLIC); }
+   "static" { return symbol(Parser_sym.STATIC); }
+   "void"   { return symbol(Parser_sym.VOID); }
+   "main"   { return symbol(Parser_sym.MAIN); }
+   "extends" { return symbol(Parser_sym.EXTENDS); }
+   "return" { return symbol(Parser_sym.RETURN); }
+   "if"     { return symbol(Parser_sym.IF); }
+   "else"   { return symbol(Parser_sym.ELSE); }
+   "while"  { return symbol(Parser_sym.WHILE); }
+   "this"   { return symbol(Parser_sym.THIS); }
+   "new"    { return symbol(Parser_sym.NEW); }
+   "String" { return symbol(Parser_sym.TYPE_STRING); }
+   "int"    { return symbol(Parser_sym.TYPE_INT); }
+   "boolean" { return symbol(Parser_sym.TYPE_BOOLEAN); }
+   "char"   { return symbol(Parser_sym.TYPE_CHAR); }
+   "System.out.print"   { return symbol(Parser_sym.SYSTEM_OUT_PRINT); }
+   "System.out.println" { return symbol(Parser_sym.SYSTEM_OUT_PRINTLN); }
+   "length" { return symbol(Parser_sym.ARRLEN); }
+   "true"   { return symbol(Parser_sym.TRUE); }
+   "false"  { return symbol(Parser_sym.FALSE); }
    {id}     { return symbol(Parser_sym.IDENTIFIER, yytext()); }
-   [0-9]+   { return symbol(Parser_sym.INT, Integer.parseInt(yytext())); }
+   [0-9]+   { return symbol(Parser_sym.INTEGER_LITERAL, Integer.parseInt(yytext())); }
    "/*"     { commentDepth = 1; yybegin(MultiLineComment); }
    "*/"     { error("unexpected */"); }
    "//"     { yybegin(SingleLineComment); }

@@ -30,9 +30,8 @@ parser code  {:
 
 /* Terminalsymbole, die vom Lexer produziert werden. */
 terminal String IDENTIFIER;
-terminal Integer INT;
-terminal PRINT; 
-terminal EQ;
+terminal Integer INTEGER_LITERAL;
+terminal BECOMES;
 terminal PLUS;
 terminal MINUS;
 terminal TIMES;
@@ -41,52 +40,285 @@ terminal COMMA;
 terminal LPAREN;
 terminal RPAREN;
 terminal SEMICOLON;
+
+terminal LSQUARE;
+terminal RSQUARE;
+terminal LCURLY;
+terminal RCURLY;
+terminal AND;
+terminal LT;
+terminal NOT;
+terminal DOT;
+
+terminal CLASS;
+terminal PUBLIC;
+terminal STATIC;
+terminal VOID;
+terminal MAIN;
+terminal EXTENDS;
+terminal RETURN;
+terminal IF;
+terminal ELSE;
+terminal WHILE;
+terminal THIS;
+terminal NEW;
+
+terminal TYPE_STRING;
+terminal TYPE_INT;
+terminal TYPE_BOOLEAN;
+terminal TYPE_CHAR;
+
+terminal SYSTEM_OUT_PRINTLN;
+terminal SYSTEM_OUT_PRINT;
+terminal ARRLEN;
+
+terminal TRUE;
+terminal FALSE;
+
 // EOF is created automatically
 
 /* Nichtterminalsymbole */
-non terminal Stm;
-non terminal Exp;
-non terminal ExpList;
+non terminal Goal;
+non terminal MainClass;
+non terminal ClassDeclaration;
+non terminal ClassDeclarationList;
+non terminal VarDeclaration;
+non terminal VarDeclarationList;
+non terminal MethodDeclaration;
+non terminal MethodDeclarationList;
+non terminal ParameterDeclarationListAndParens;
+non terminal ParameterDeclarationList;
+non terminal ParameterDeclaration;
+non terminal StatementList;
+non terminal Statement;
+non terminal Expression;
+non terminal ExpressionList;
+non terminal IntArrayCreation;
+non terminal ArrayLookup;
+non terminal ArrayLength;
+non terminal MethodInvocationOnObject;
+non terminal MethodInvocationParameterList;
+non terminal Type;
+non terminal Identifier;
 
 /* Praezedenzregeln */
-precedence right SEMICOLON;
-precedence left EQ;
-precedence left PRINT;
+precedence nonassoc BECOMES;
+precedence nonassoc AND;
+precedence left LT;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE;
+precedence right NEW;
+precedence right NOT;
+precedence left DOT;
 
 /* Startsymbol */
-start with Stm;
+start with Goal;
 
 /* Grammatik */
-Stm ::= IDENTIFIER:i EQ Exp:e
-          {: :}
-      | PRINT LPAREN ExpList:es RPAREN   
-          {: :}
-      | Stm:s1 SEMICOLON Stm:s2 
-          {: :}
-      ;
+Goal ::=  MainClass:m ClassDeclarationList:c
+          {: :};
 
-Exp ::= Exp:e1 PLUS Exp:e2  
-          {: :}
-      | Exp:e1 MINUS Exp:e2  
-          {: :}
-      | Exp:e1 TIMES Exp:e2  
-          {: :}
-      | Exp:e1 DIVIDE Exp:e2  
-          {: :}
-       | IDENTIFIER:i
-          {: :}
-       | INT:num                 
-          {: :}
-       | LPAREN Exp:e RPAREN    
-          {: :}
-       | LPAREN Stm:s COMMA Exp:e RPAREN 
-          {: :}
-       ;
-   
-ExpList ::= Exp:e                    
-              {: :}
-           | ExpList:es COMMA Exp:e  
-              {: :} 
-           ;
+MainClass ::=
+    CLASS:c Identifier:name LCURLY PUBLIC STATIC VOID MAIN LPAREN TYPE_STRING LSQUARE RSQUARE Identifier:args RPAREN LCURLY Statement:stmt RCURLY RCURLY
+    {: :}
+;
+
+ClassDeclaration ::=
+    CLASS Identifier:i LCURLY VarDeclarationList:v MethodDeclarationList:m RCURLY
+    {: :}
+  |
+    CLASS Identifier:i EXTENDS Identifier:parent LCURLY VarDeclarationList:v MethodDeclarationList:m RCURLY
+    {: :}
+;
+
+ClassDeclarationList ::=
+    {: :}
+  |
+    ClassDeclaration:c ClassDeclarationList:l
+    {: :}
+;
+
+VarDeclarationList ::=
+    {: :}
+  |
+    VarDeclaration:v VarDeclarationList:l
+    {: :}
+;
+
+VarDeclaration ::=
+    Type:t Identifier:i SEMICOLON
+    {: :}
+;
+
+MethodDeclarationList ::=
+    {: :}
+  |
+    MethodDeclaration:m MethodDeclarationList:l
+    {: :}
+;
+
+MethodDeclaration ::=
+    PUBLIC:p Type:t Identifier:i ParameterDeclarationListAndParens LCURLY VarDeclarationList:vars StatementList:stmts RETURN Expression:rv SEMICOLON RCURLY
+    {: :}
+;
+
+ParameterDeclarationListAndParens ::=
+    LPAREN:l RPAREN:r
+    {: :}
+  |
+    LPAREN ParameterDeclarationList:params RPAREN
+    {: :}
+;
+
+ParameterDeclarationList ::=
+    ParameterDeclaration:p COMMA ParameterDeclarationList:l
+    {: :}
+  |
+    ParameterDeclaration:p
+    {: :}
+;
+
+ParameterDeclaration ::=
+    Type:t Identifier:i
+    {: :}
+;
+
+StatementList ::=
+    {: :}
+  |
+    Statement:s StatementList:l
+    {: :}
+;
+
+Statement   ::=
+    Identifier:id BECOMES Expression:expr SEMICOLON
+    {: :}
+  |
+    IF:ifKeyword LPAREN Expression:expr RPAREN Statement:thenStmt ELSE Statement:elseStmt
+    {: :}
+  |
+    SYSTEM_OUT_PRINT:s LPAREN LPAREN TYPE_CHAR RPAREN Expression RPAREN SEMICOLON
+    {: :}
+  |
+    SYSTEM_OUT_PRINTLN:s LPAREN Expression:e RPAREN SEMICOLON
+    {: :}
+  |
+    Identifier:id LSQUARE Expression:e RSQUARE BECOMES Expression:v SEMICOLON
+    {: :}
+  |
+    WHILE:w LPAREN Expression:cond RPAREN Statement:s
+    {: :}
+  |
+    LCURLY StatementList:s RCURLY
+    {: :}
+;
+
+Expression ::=
+    Expression:arg1 MINUS Expression:arg2
+    {: :}
+  |
+    Expression:arg1 MINUS Expression:arg2
+    {: :}
+  |
+    Expression:arg1 TIMES Expression:arg2
+    {: :}
+  |
+    Expression:arg1 DIVIDE Expression:arg2
+    {: :}
+  |
+    Expression:arg1 LT Expression:arg2
+    {: :}
+  |
+    Expression:arg1 AND Expression:arg2
+    {: :}
+  |
+    ArrayLength:l
+    {: :}
+  |
+    ArrayLookup:r
+    {: :}
+  |
+    MethodInvocationOnObject:m
+    {: :}
+  |
+    INTEGER_LITERAL:i
+    {: :}
+  |
+    TRUE:t
+    {: :}
+  |
+    FALSE:f
+    {: :}
+  |
+    IDENTIFIER:i
+    {: :}
+  |
+    THIS:t
+    {: :}
+  |
+    IntArrayCreation:a
+    {: :}
+  |
+    NEW:n Identifier:i LPAREN RPAREN
+    {: :}
+  |
+    NOT:not Expression:expr
+    {: :}
+  |
+    LPAREN Expression:expr RPAREN
+    {: :}
+;
+
+IntArrayCreation ::=
+    NEW:n TYPE_INT LSQUARE Expression:e RSQUARE
+    {: :}
+;
+
+ArrayLength ::=
+    Expression:e DOT ARRLEN
+    {: :}
+;
+
+ArrayLookup ::=
+    Expression:e LSQUARE Expression:i RSQUARE
+    {: :}
+;
+
+MethodInvocationOnObject ::=
+    Expression:e DOT Identifier:id MethodInvocationParameterList:l
+    {: :}
+;
+
+MethodInvocationParameterList ::=
+    LPAREN:l RPAREN:r
+    {: :}
+  |
+    LPAREN:l ExpressionList:e RPAREN
+    {: :}
+;
+
+Type ::=
+    TYPE_INT:i LSQUARE RSQUARE
+    {: :}
+  |
+    TYPE_BOOLEAN:b
+    {: RESULT = new BooleanType(bleft); :}
+  |
+    TYPE_INT:i
+    {: :}
+  |
+    Identifier:i
+    {: :}
+;
+
+ExpressionList ::=
+    Expression:e
+    {: :}
+  | Expression:e COMMA ExpressionList:l
+    {: :}
+;
+
+Identifier ::=
+    IDENTIFIER:id
+    {: :}
+;
