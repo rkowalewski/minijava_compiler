@@ -132,18 +132,18 @@ MainClass ::=
     {: :}
 ;
 
+ClassDeclarationList ::=
+    {: :}
+  |
+    ClassDeclaration:c ClassDeclarationList:l
+    {: :}
+;
+
 ClassDeclaration ::=
     CLASS Identifier:i LCURLY VarDeclarationList:v MethodDeclarationList:m RCURLY
     {: :}
   |
     CLASS Identifier:i EXTENDS Identifier:parent LCURLY VarDeclarationList:v MethodDeclarationList:m RCURLY
-    {: :}
-;
-
-ClassDeclarationList ::=
-    {: :}
-  |
-    ClassDeclaration:c ClassDeclarationList:l
     {: :}
 ;
 
@@ -200,9 +200,6 @@ StatementList ::=
 ;
 
 Statement   ::=
-    Identifier:id BECOMES Expression:expr SEMICOLON
-    {: :}
-  |
     IF:ifKeyword LPAREN Expression:expr RPAREN Statement:thenStmt ELSE Statement:elseStmt
     {: :}
   |
@@ -210,6 +207,9 @@ Statement   ::=
     {: :}
   |
     SYSTEM_OUT_PRINTLN:s LPAREN Expression:e RPAREN SEMICOLON
+    {: :}
+  |
+    Identifier:id BECOMES Expression:expr SEMICOLON
     {: :}
   |
     Identifier:id LSQUARE Expression:e RSQUARE BECOMES Expression:v SEMICOLON
