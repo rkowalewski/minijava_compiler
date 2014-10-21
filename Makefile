@@ -13,4 +13,4 @@ straightline/Lexer.java: straightline/Lexer.jflex
 	cd straightline; $(JFLEX) Lexer.jflex
 
 clean:
-	rm -f straightline/Parser_sym.java straightline/Parser.java straightline/Lexer.java straightline/Lexer.java~ straightline/*.class
+	rm -f straightline/Parser_sym.java straightline/Parser.java straightline/Lexer.java straightline/Lexer.java~ straightline/*.class minijava/syntax/*.class

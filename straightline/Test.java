@@ -2,6 +2,8 @@ package straightline;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import minijava.syntax.Prg;
+import minijava.syntax.PrettyPrint;
 
 public class Test {
 
@@ -28,7 +30,9 @@ public class Test {
     try {
       try {
         parseTree = parser.parse();
-        System.out.println("Parsing der Eingabe erfolgreich.");
+        Prg prg = (Prg) parseTree.value;
+        //System.out.println(prg.prettyPrint());
+        System.out.println("Parsen der Eingabe erfolgreich!");
       } finally {
         inp.close();
       }
