@@ -3,3 +3,21 @@ straightline/Lexer.java
 straightline/Parser.java
 straightline/Parser_sym.java
 *~
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# Intellij
+.idea/
+*.iml
+*.iws
+out/
+
+# Mac
+.DS_Store
+
+# Maven
+log/
+target/
