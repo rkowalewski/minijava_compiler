@@ -1,5 +1,7 @@
 package minijava.syntax;
 
+import minijava.semantic.visitor.Visitor;
+
 public class StmPrintlnInt extends Stm {
 
   final public Exp arg;
@@ -12,4 +14,9 @@ public class StmPrintlnInt extends Stm {
   public <A, T extends Throwable> A accept(StmVisitor<A, T> v) throws T {
     return v.visit(this);
   }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visit(this);
+    }
 }

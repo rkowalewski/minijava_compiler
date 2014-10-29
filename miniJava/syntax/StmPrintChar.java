@@ -1,15 +1,22 @@
 package minijava.syntax;
 
+import minijava.semantic.visitor.Visitor;
+
 public class StmPrintChar extends Stm {
 
-  final public Exp arg;
+    final public Exp arg;
 
-  public StmPrintChar(Exp arg) {
-    this.arg = arg;
-  }
+    public StmPrintChar(Exp arg) {
+        this.arg = arg;
+    }
 
-  @Override
-  public <A, T extends Throwable> A accept(StmVisitor<A, T> v) throws T {
-    return v.visit(this);
-  }
+    @Override
+    public <A, T extends Throwable> A accept(StmVisitor<A, T> v) throws T {
+        return v.visit(this);
+    }
+
+    @Override
+    public void accept(Visitor v) {
+        v.visit(this);
+    }
 }
