@@ -1,6 +1,5 @@
 package minijava.semantic.visitor;
 
-import minijava.semantic.node.ClassDeclaration;
 import minijava.semantic.node.Declaration;
 import minijava.semantic.node.MethodDeclaration;
 import minijava.semantic.symbol.Symbol;
@@ -17,7 +16,6 @@ import java.util.List;
 public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
     private SymbolTable symbolTable;
     private List<ErrorMsg> errors;
-    private ClassDeclaration currentClass;
 
     public TypeCheckVisitor(SymbolTable symbolTable, List<ErrorMsg> errors) {
         this.symbolTable = symbolTable;
@@ -119,9 +117,7 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
 
         if (decl == null) {
             reportError("Statement id for array access is not defined!");
-        }
-
-        if (!(decl.getType() instanceof TyArr)) {
+        } else if (!(decl.getType() instanceof TyArr)) {
             String msg = "invalid type of statement id for array access (found: %s, required: int[])";
             reportError(String.format(msg, decl.getType()));
         }
