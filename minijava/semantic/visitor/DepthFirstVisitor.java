@@ -6,132 +6,141 @@ import minijava.syntax.*;
  * User: kowa
  * Date: 10/29/14
  */
-public abstract class DepthFirstVisitor implements Visitor {
+public abstract class DepthFirstVisitor<V> implements Visitor<V> {
     @Override
-    public void visit(Prg prg) {
+    public V visit(Prg prg) {
         prg.mainClass.accept(this);
         for (DeclClass declClass : prg.classes) {
             declClass.accept(this);
         }
+        return null;
     }
 
     @Override
-    public void visit(DeclMain declMain) {
-
+    public V visit(DeclClass declClass) {
+        return null;
     }
 
     @Override
-    public void visit(DeclClass declClass) {
-
+    public V visit(DeclVar declVar) {
+        return null;
     }
 
     @Override
-    public void visit(DeclVar declVar) {
-
+    public V visit(DeclMeth declMeth) {
+        return null;
     }
 
     @Override
-    public void visit(DeclMeth declMeth) {
-
+    public V visit(DeclMain declMain) {
+        return null;
     }
 
     @Override
-    public void visit(Parameter parameter) {
-
+    public V visit(Parameter parameter) {
+        //Delegate to DeclVar
+        DeclVar declVar = new DeclVar(parameter.ty, parameter.id);
+        declVar.accept(this);
+        return null;
     }
 
     @Override
-    public void visit(StmArrayAssign stm) {
-
+    public V visit(StmArrayAssign stm) {
+        return null;
     }
 
     @Override
-    public void visit(StmAssign stm) {
-
+    public V visit(StmAssign stm) {
+        return null;
     }
 
     @Override
-    public void visit(StmIf stmIf) {
-
+    public V visit(StmIf stmIf) {
+        return null;
     }
 
     @Override
-    public void visit(StmList stmList) {
-
+    public V visit(StmList stmList) {
+        return null;
     }
 
     @Override
-    public void visit(StmPrintChar stmPrintChar) {
-
+    public V visit(StmPrintChar stmPrintChar) {
+        return null;
     }
 
     @Override
-    public void visit(StmPrintlnInt stmPrintlnInt) {
-
+    public V visit(StmPrintlnInt stmPrintlnInt) {
+        return null;
     }
 
     @Override
-    public void visit(StmWhile stmWhile) {
-
+    public V visit(StmWhile stmWhile) {
+        return null;
     }
 
     @Override
-    public void visit(ExpThis expThis) {
-
+    public V visit(ExpThis expThis) {
+        return null;
     }
 
     @Override
-    public void visit(ExpTrue expTrue) {
-
+    public V visit(ExpTrue expTrue) {
+        return null;
     }
 
     @Override
-    public void visit(ExpInvoke expInvoke) {
-
+    public V visit(ExpInvoke expInvoke) {
+        return null;
     }
 
     @Override
-    public void visit(ExpNewIntArray expNewIntArray) {
-
+    public V visit(ExpNewIntArray expNewIntArray) {
+        return null;
     }
 
     @Override
-    public void visit(ExpBinOp expBinOp) {
-
+    public V visit(ExpBinOp expBinOp) {
+        return null;
     }
 
     @Override
-    public void visit(ExpNew expNew) {
-
+    public V visit(ExpNew expNew) {
+        return null;
     }
 
     @Override
-    public void visit(ExpNeg expNeg) {
-
+    public V visit(ExpNeg expNeg) {
+        return null;
     }
 
     @Override
-    public void visit(ExpArrayLength expArrayLength) {
-
+    public V visit(ExpArrayLength expArrayLength) {
+        return null;
     }
 
     @Override
-    public void visit(ExpArrayGet expArrayGet) {
-
+    public V visit(ExpArrayGet expArrayGet) {
+        return null;
     }
 
     @Override
-    public void visit(ExpIntConst expIntConst) {
-
+    public V visit(ExpIntConst expIntConst) {
+        return null;
     }
 
     @Override
-    public void visit(ExpFalse expFalse) {
-
+    public V visit(ExpFalse expFalse) {
+        return null;
     }
 
     @Override
-    public void visit(ExpId expId) {
+    public V visit(ExpId expId) {
+        return null;
+    }
 
+    @Override
+    public V visit(Ty ty) {
+        return null;
     }
 }

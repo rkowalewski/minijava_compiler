@@ -2,27 +2,32 @@ package minijava.syntax;
 
 public class TyBool extends Ty {
 
-  public TyBool() {
-  }
+    public TyBool() {
+    }
 
-  @Override
-  public String toString() {
-    return "boolean";
-  }
+    @Override
+    public String toString() {
+        return "boolean";
+    }
 
-  @Override
-  public boolean equals(Object obj) {
-    return (obj instanceof TyBool);
-  }
+    @Override
+    public boolean isPrimitive() {
+        return true;
+    }
 
-  @Override
-  public <A> A accept(TyVisitor<A> v) {
-    return v.visit(this);
-  }
+    @Override
+    public boolean equals(Object obj) {
+        return (obj instanceof TyBool);
+    }
 
-  @Override
-  public int hashCode() {
-    int hash = 7;
-    return hash;
-  }
+    @Override
+    public <A> A accept(TyVisitor<A> v) {
+        return v.visit(this);
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        return hash;
+    }
 }

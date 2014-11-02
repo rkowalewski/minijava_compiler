@@ -1,21 +1,20 @@
 package minijava.semantic.node;
 
+import minijava.syntax.Ty;
+
 /**
  * User: kowa
  * Date: 10/29/14
  */
 public class VarDeclaration extends Declaration {
-    private ClassDeclaration declaringClass = null;
-
-    public VarDeclaration(Type type) {
+    public VarDeclaration(Ty type) {
         super(type);
     }
 
-    public ClassDeclaration getDeclaringClass() {
-        return declaringClass;
+    @Override
+    public Kind getKind() {
+        return Kind.VARIABLE;
     }
 
-    public void setDeclaringClass(ClassDeclaration declaringClass) {
-        this.declaringClass = declaringClass;
-    }
+
 }

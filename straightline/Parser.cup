@@ -82,21 +82,21 @@ terminal FALSE;
 non terminal Prg Goal;
 non terminal DeclMain MainClass;
 non terminal DeclClass ClassDeclaration;
-non terminal List<DeclClass> ClassDeclarationList;
+non terminal LinkedList<DeclClass> ClassDeclarationList;
 non terminal DeclVar VarDeclaration;
-non terminal List<DeclVar> VarDeclarationList;
+non terminal LinkedList<DeclVar> VarDeclarationList;
 non terminal DeclMeth MethodDeclaration;
-non terminal List<DeclMeth> MethodDeclarationList;
-non terminal List<Parameter> ParameterDeclarationListAndParens;
-non terminal List<Parameter> ParameterDeclarationList;
+non terminal LinkedList<DeclMeth> MethodDeclarationList;
+non terminal LinkedList<Parameter> ParameterDeclarationListAndParens;
+non terminal LinkedList<Parameter> ParameterDeclarationList;
 non terminal Parameter ParameterDeclaration;
-non terminal List<Stm> StatementList;
+non terminal LinkedList<Stm> StatementList;
 non terminal Stm Statement;
 non terminal Exp Expression;
-non terminal List<Exp> ExpressionList;
+non terminal LinkedList<Exp> ExpressionList;
 non terminal Exp ArrayLookup;
 non terminal Exp ArrayLength;
-non terminal List<Exp> MethodInvocationParameterList;
+non terminal LinkedList<Exp> MethodInvocationParameterList;
 non terminal Ty Type;
 non terminal String Identifier;
 
@@ -140,7 +140,7 @@ VarDeclarationList ::=
     {: RESULT = new LinkedList<DeclVar>(); :}
   |
     VarDeclarationList:l VarDeclaration:v
-    {: RESULT = new LinkedList<DeclVar>(l); RESULT.add(v); :}
+    {: RESULT = new LinkedList<DeclVar>(l); RESULT.addFirst(v); :}
 ;
 
 VarDeclaration ::=
@@ -152,7 +152,7 @@ MethodDeclarationList ::=
     {: RESULT = new LinkedList<DeclMeth>(); :}
   |
     MethodDeclaration:method MethodDeclarationList:list
-    {: RESULT = new LinkedList<DeclMeth>(list); RESULT.add(method); :}
+    {: RESULT = new LinkedList<DeclMeth>(list); RESULT.addFirst(method); :}
 ;
 
 MethodDeclaration ::=
@@ -169,10 +169,10 @@ ParameterDeclarationListAndParens ::=
 
 ParameterDeclarationList ::=
     ParameterDeclaration:p COMMA ParameterDeclarationList:l
-    {: RESULT = new LinkedList<Parameter>(l); RESULT.add(p); :}
+    {: RESULT = new LinkedList<Parameter>(l); RESULT.addFirst(p); :}
   |
     ParameterDeclaration:p
-    {: RESULT = Collections.singletonList(p); :}
+    {: RESULT = new LinkedList<Parameter>(Collections.singletonList(p)); :}
 ;
 
 ParameterDeclaration ::=
@@ -184,7 +184,7 @@ StatementList ::=
     {: RESULT = new LinkedList<Stm>(); :}
   |
     Statement:s StatementList:l
-    {: RESULT = new LinkedList<Stm>(l); RESULT.add(s); :}
+    {: RESULT = new LinkedList<Stm>(l); RESULT.addFirst(s); :}
 ;
 
 Statement ::=
@@ -299,9 +299,9 @@ Type ::=
 
 ExpressionList ::=
     Expression:e
-    {: RESULT = Collections.singletonList(e); :}
+    {: RESULT = new LinkedList<Exp>(Collections.singletonList(e)); :}
   | Expression:e COMMA ExpressionList:l
-    {: RESULT = new LinkedList<Exp>(l); RESULT.add(e); :}
+    {: RESULT = new LinkedList<Exp>(l); RESULT.addFirst(e); :}
 ;
 
 Identifier ::=

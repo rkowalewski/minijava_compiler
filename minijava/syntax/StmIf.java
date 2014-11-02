@@ -20,8 +20,8 @@ public class StmIf extends Stm {
     }
 
     @Override
-    public void accept(Visitor v) {
-        v.visit(this);
+    public <V> V accept(Visitor<V> v) {
+        return v.visit(this);
     }
 }
 

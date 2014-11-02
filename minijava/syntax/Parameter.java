@@ -12,8 +12,8 @@ public class Parameter {
         this.ty = ty;
     }
 
-    public void accept(Visitor v) {
-        v.visit(this);
+    public <V> V accept(Visitor<V> v) {
+        return v.visit(this);
     }
 
 }

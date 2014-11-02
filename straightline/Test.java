@@ -1,10 +1,15 @@
 package straightline;
 
+import minijava.semantic.symbol.SymbolTable;
+import minijava.semantic.visitor.ErrorMsg;
 import minijava.semantic.visitor.SymbolTableVisitor;
+import minijava.semantic.visitor.TypeCheckVisitor;
 import minijava.syntax.Prg;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Test {
 
@@ -28,14 +33,22 @@ public class Test {
         Parser parser = new Parser(lex);
 
         java_cup.runtime.Symbol parseTree;
+        SymbolTable symbolTable = new SymbolTable();
+        List<ErrorMsg> errors = new ArrayList<ErrorMsg>();
         try {
             try {
                 parseTree = parser.parse();
                 Prg prg = (Prg) parseTree.value;
-                SymbolTableVisitor typeInfo = new SymbolTableVisitor();
-                prg.accept(typeInfo);
-                System.out.println("ErrorCount: " + typeInfo.getErrorCount());
-                //System.out.println(prg.prettyPrint());
+                prg.accept(new SymbolTableVisitor(symbolTable, errors));
+
+                if (errors.size() > 0) {
+                    System.out.println("number of errors: " + errors.size());
+                    System.exit(1);
+                } else {
+                    TypeCheckVisitor typeCheckVisitor = new TypeCheckVisitor(symbolTable, errors);
+                    prg.accept(typeCheckVisitor);
+                    System.out.println("number of errors: " + errors.size());
+                }
             } finally {
                 inp.close();
             }

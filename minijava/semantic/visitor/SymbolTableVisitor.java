@@ -1,47 +1,71 @@
 package minijava.semantic.visitor;
 
-import minijava.semantic.node.ClassDeclaration;
-import minijava.semantic.node.MethodDeclaration;
-import minijava.semantic.node.Type;
-import minijava.semantic.node.VarDeclaration;
+import minijava.semantic.node.*;
+import minijava.semantic.symbol.DuplicateSymbolException;
 import minijava.semantic.symbol.Symbol;
 import minijava.semantic.symbol.SymbolTable;
 import minijava.syntax.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * User: kowa
  * Date: 10/28/14
  */
-public class SymbolTableVisitor extends DepthFirstVisitor {
+public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
     private final SymbolTable symbolTable;
-    private final Map<String, ClassDeclaration> classTable = new HashMap<String, ClassDeclaration>();
-    private ClassDeclaration currentClass;
-    private MethodDeclaration currentMethod;
-    private int errorCount = 0;
+    private final List<ErrorMsg> errors;
 
-    public SymbolTableVisitor()  {
-        this.symbolTable = new SymbolTable();
-        currentClass = null;
-        currentMethod = null;
-        symbolTable.beginScope();
+    public SymbolTableVisitor(SymbolTable _symbolTable, List<ErrorMsg> _errors)  {
+        this.symbolTable = _symbolTable;
+        this.errors = _errors;
+    }
+
+    public void addSymtabEntry(Symbol s, Declaration d) {
+        try {
+            symbolTable.put(s, d);
+        } catch(DuplicateSymbolException ex) {
+            errors.add(new ErrorMsg(ex.getMessage()));
+        }
     }
 
     @Override
-    public void visit(DeclClass declClass) {
-        if (classTable.containsKey(declClass.className)) {
-            reportError();
-        }
+    public Void visit(Prg prg) {
+        symbolTable.enterScope();
 
-        currentClass = new ClassDeclaration(declClass.className, Type.getType(declClass.className));;
-        symbolTable.push(declClass.className, currentClass);
+        super.visit(prg);
 
-        //Begin Scope
-        currentMethod = null;
-        symbolTable.beginScope();
+        symbolTable.exitScope();
+        return null;
+    }
+
+    @Override
+    public Void visit(DeclMain declMain) {
+        ClassDeclaration clazz = new ClassDeclaration(declMain.className, new TyClass(declMain.className));
+        Symbol s = Symbol.get(declMain.className);
+        addSymtabEntry(s, clazz);
+
+        symbolTable.enterScope();
+
+        MethodDeclaration method = new MethodDeclaration(new TyVoid(), Collections.<Ty>emptyList());
+        addSymtabEntry(Symbol.get("mainMethod"), method);
+
+        //For the main method we must not enter the method scope
+
+        symbolTable.exitScope();
+
+        return null;
+    }
+
+    @Override
+    public Void visit(DeclClass declClass) {
+        ClassDeclaration clazz = new ClassDeclaration(declClass.className, new TyClass(declClass.className));
+        Symbol s = Symbol.get(declClass.className);
+        addSymtabEntry(s, clazz);
+
+        symbolTable.enterScope();
 
         for (DeclVar field : declClass.fields) {
             field.accept(this);
@@ -51,55 +75,34 @@ public class SymbolTableVisitor extends DepthFirstVisitor {
             method.accept(this);
         }
 
-        symbolTable.endScope();
-
-        currentClass = null;
+        symbolTable.exitScope();
+        return null;
     }
 
     @Override
-    public void visit(DeclVar declVar) {
-        VarDeclaration varDeclaration = new VarDeclaration(Type.getType(declVar.ty.toString()));
-
-        Symbol prevDecl = symbolTable.scopeContains(declVar.name);
-        if (prevDecl != null && (prevDecl.getDeclaration() instanceof VarDeclaration) && ((VarDeclaration)prevDecl.getDeclaration()).getDeclaringClass() != null && ((VarDeclaration)prevDecl.getDeclaration()).getDeclaringClass() == currentClass) {
-            reportError();
-        }
-        symbolTable.push(declVar.name, varDeclaration);
-
-        if (currentMethod != null) {
-            //currentMethod.incrementLocalCount();
-            //decl.setLocalPosition(currentMethodDeclaration.getLocalCount());
-            currentMethod.addLocalVariable(declVar.name, varDeclaration);
-        } else {
-//            decl.setInstancePosition(currentClassDeclaration.getInstanceVariableCount());
-            currentClass.addField(declVar.name, varDeclaration);
-        }
-
-        varDeclaration.setDeclaringClass(currentClass);
+    public Void visit(DeclVar declVar) {
+        Symbol symbol = Symbol.get(declVar.name);
+        VarDeclaration d = new VarDeclaration(declVar.ty);
+        addSymtabEntry(symbol, d);
+        return null;
     }
 
     @Override
-    public void visit(DeclMeth declMeth) {
+    public Void visit(DeclMeth declMeth) {
         // Get the parameter types
-        ArrayList<Type> argumentTypes = new ArrayList<Type>();
+        ArrayList<Ty> argumentTypes = new ArrayList<Ty>();
 
         for (Parameter param : declMeth.parameters) {
-            argumentTypes.add( Type.getType(param.ty.toString()) );
+            argumentTypes.add(param.ty);
         }
 
         // Push the method declaration onto the symbol table
-        MethodDeclaration declaration = new MethodDeclaration( Type.getType(declMeth.ty.toString()), argumentTypes, currentClass);
-        MethodDeclaration previousDeclaration = currentClass.getMethod(declMeth.methodName);
-        if (previousDeclaration != null && previousDeclaration.getDeclaringClass() == currentClass) {
-            //Method already defined
-            reportError();
-        }
-        symbolTable.push(declMeth.methodName, declaration);
-        currentMethod = declaration;
-        currentClass.addMethod(declMeth.methodName, declaration);
+        MethodDeclaration declaration = new MethodDeclaration(declMeth.ty, argumentTypes);
+        addSymtabEntry(Symbol.get(declMeth.methodName), declaration);
+
 
         // Increment the scope
-        symbolTable.beginScope();
+        symbolTable.enterScope();
 
         for (Parameter param : declMeth.parameters) {
             param.accept(this);
@@ -109,31 +112,11 @@ public class SymbolTableVisitor extends DepthFirstVisitor {
             declVar.accept(this);
         }
 
-        symbolTable.endScope();
-    }
-
-    @Override
-    public void visit(Parameter parameter) {
-        //Delegate to DeclVar
-        DeclVar declVar = new DeclVar(parameter.ty, parameter.id);
-        declVar.accept(this);
-    }
-
-    @Override
-    public void visit(DeclMain declMain) {
-        ClassDeclaration decl = new ClassDeclaration(declMain.className, Type.getType(declMain.className));
-        classTable.put(declMain.className, decl);
+        symbolTable.exitScope();
+        return null;
     }
 
     private void reportError() {
-        this.errorCount++;
-    }
 
-    public int getErrorCount() {
-        return errorCount;
-    }
-
-    public SymbolTable getSymbolTable() {
-        return symbolTable;
     }
 }

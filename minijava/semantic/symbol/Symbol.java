@@ -1,6 +1,7 @@
 package minijava.semantic.symbol;
 
-import minijava.semantic.node.Declaration;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * User: kowa
@@ -8,24 +9,44 @@ import minijava.semantic.node.Declaration;
  */
 public class Symbol {
     String name;
-    Integer scope;
-    Declaration declaration;
+    private static Map<String, Symbol> table = new HashMap<String, Symbol>();
 
-    public Symbol(String _name, Integer _scope, Declaration _declaration) {
-        name = _name;
-        scope = _scope;
-        declaration = _declaration;
+    private Symbol(String s) {
+        this.name = s;
+    }
+
+    public static Symbol get(String key) {
+        Symbol symbol = table.get(key);
+
+        if(symbol == null) {
+            symbol = new Symbol(key);
+            table.put(key, symbol);
+        }
+
+        return symbol;
     }
 
     public String getName() {
         return name;
     }
 
-    public Integer getScope() {
-        return scope;
+    @Override
+    public String toString() {
+        return getName();
     }
 
-    public Declaration getDeclaration() {
-        return this.declaration;
+    @Override
+    public boolean equals(Object o) {
+        if(o == null || !(o instanceof Symbol)) {
+            return false;
+        } else {
+            Symbol s = (Symbol)o;
+            return s.name.equals(this.name);
+        }
+    }
+
+    @Override
+    public int hashCode() {
+        return name.hashCode();
     }
 }
