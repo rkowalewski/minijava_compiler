@@ -106,6 +106,8 @@ precedence left LT;
 precedence left PLUS, MINUS;
 precedence left TIMES, DIVIDE;
 precedence right NEW;
+precedence left RPAREN, RSQUARE;
+precedence right LPAREN, LSQUARE;
 precedence right NOT;
 precedence left DOT;
 
@@ -140,7 +142,7 @@ VarDeclarationList ::=
     {: RESULT = new LinkedList<DeclVar>(); :}
   |
     VarDeclarationList:l VarDeclaration:v
-    {: RESULT = new LinkedList<DeclVar>(l); RESULT.addFirst(v); :}
+    {: RESULT = new LinkedList<DeclVar>(l); RESULT.add(v); :}
 ;
 
 VarDeclaration ::=

@@ -39,15 +39,28 @@ public class Test {
             try {
                 parseTree = parser.parse();
                 Prg prg = (Prg) parseTree.value;
-                prg.accept(new SymbolTableVisitor(symbolTable, errors));
+
+                SymbolTableVisitor symbolTableVisitor = new SymbolTableVisitor(symbolTable, errors);
+                prg.accept(symbolTableVisitor);
 
                 if (errors.size() > 0) {
-                    System.out.println("number of errors: " + errors.size());
+                    System.out.println(String.format("#errors in building symbol table of file %s: %d", filename, errors.size()));
+                    for (ErrorMsg msg : errors) {
+                        System.out.println(msg.getMsg());
+                    }
                     System.exit(1);
                 } else {
                     TypeCheckVisitor typeCheckVisitor = new TypeCheckVisitor(symbolTable, errors);
                     prg.accept(typeCheckVisitor);
-                    System.out.println("number of errors: " + errors.size());
+
+                    if (errors.size() > 0) {
+                        System.out.println(String.format("#errors in type checking of file %s: %d", filename, errors.size()));
+
+                        for (ErrorMsg msg : errors) {
+                            System.out.println(msg.getMsg());
+                        }
+                    }
+
                 }
             } finally {
                 inp.close();
