@@ -33,4 +33,25 @@ public class MethodDeclaration extends Declaration {
     public void setDeclaringClass(ClassDeclaration declaringClass) {
         this.declaringClass = declaringClass;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
+        MethodDeclaration that = (MethodDeclaration) o;
+
+        if (declaringClass != null ? !declaringClass.equals(that.declaringClass) : that.declaringClass != null)
+            return false;
+
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (declaringClass != null ? declaringClass.hashCode() : 0);
+        return result;
+    }
 }

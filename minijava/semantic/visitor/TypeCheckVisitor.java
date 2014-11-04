@@ -7,6 +7,7 @@ import minijava.semantic.symbol.SymbolTable;
 import minijava.syntax.*;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -88,8 +89,8 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         Ty actualReturn = declMeth.returnExp.accept(this);
 
         //Checks if the expectedReturn Class is the same or a super class (interface) of actualReturn class
-        if (!(expectedReturn.getClass().isAssignableFrom(actualReturn.getClass()))) {
-            String msg = "Incompatible Types (expected: %s, actual: %s)";
+        if (actualReturn != null && !(expectedReturn.getClass().isAssignableFrom(actualReturn.getClass()))) {
+            String msg = "incompatible type of return statement (expected: %s, actual: %s)";
             reportError(String.format(msg, expectedReturn.toString(), actualReturn.toString()));
         }
 
@@ -138,6 +139,10 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         }
 
         Ty rhsType = stm.rhs.accept(this);
+
+        if (rhsType == null) {
+            return null;
+        }
 
         if (!idType.getClass().isAssignableFrom(rhsType.getClass())) {
             reportError(String.format("incompatible types for assign statement (lhs: %s, rhs: %s)", idType, rhsType));
@@ -252,10 +257,10 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
             return null;
         }
 
-        MethodDeclaration method = symbolTable.lookupMethodInClass(Symbol.get(objTy.toString()), Symbol.get(expInvoke.method));
+        MethodDeclaration method = symbolTable.lookupMethodInClass(Symbol.get("c:" + objTy.toString()), Symbol.get("m:" + expInvoke.method));
 
         if (method == null) {
-            reportError(String.format("cannot find method %s on class %s", expInvoke.method, objTy.toString()));
+            reportError(String.format("cannot find method %s in class %s", expInvoke.method, objTy.toString()));
             return null;
         }
 
@@ -266,14 +271,51 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         }
 
         List<Ty> expectedArgTypes = method.getArgTypes();
-        for (int i=0; i < expectedArgTypes.size(); i++) {
-            if (!(expectedArgTypes.get(i).getClass().isAssignableFrom(actualArgTypes.get(i).getClass()))) {
-                reportError(String.format("arguments of method call %s.%s does not match expected arguments!", objTy.toString(), expInvoke.method));
-                return null;
+
+        boolean isError = false;
+
+        if (actualArgTypes.size() != expectedArgTypes.size()) {
+            isError = true;
+        } else {
+            for (int i = 0; i < expectedArgTypes.size(); i++) {
+                Ty actualType = actualArgTypes.get(i);
+                if (actualType == null || !(expectedArgTypes.get(i).getClass().isAssignableFrom(actualType.getClass()))) {
+                    isError = true;
+                    break;
+                }
             }
         }
 
+        if (isError) {
+            String expected = buildStringFromList(expectedArgTypes);
+            String actual = buildStringFromList(actualArgTypes);
+            String msg = "arguments of method call %s.%s does not match expected arguments! expected: %s, actual: %s";
+            reportError(String.format(msg, objTy.toString(), expInvoke.method, expected, actual));
+            return null;
+        }
+
         return method.getType().accept(this);
+    }
+
+    private String buildStringFromList(List<?> list) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("(");
+
+        for(Iterator<?> i=list.iterator(); i.hasNext();)
+        {
+            Object next = i.next();
+
+            if (next != null) {
+                builder.append(next.toString());
+            }
+
+            if (i.hasNext()) {
+                builder.append(",");
+            }
+        }
+
+        builder.append(")");
+        return builder.toString();
     }
 
     @Override
@@ -304,12 +346,12 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
 
         if (expBinOp.op == ExpBinOp.Op.AND) {
             if (!(lhsType instanceof TyBool)) {
-                reportError(String.format("ExpBinOp Error (%s): invalid type of left expression (expected: boolean, actual: %s", expBinOp.op.toString(), lhsType.toString()));
+                reportError(String.format("ExpBinOp Error (%s): invalid type of left expression (expected: boolean, actual: %s)", expBinOp.op.toString(), lhsType.toString()));
                 return null;
             }
 
             if (!(rhsType instanceof TyBool)) {
-                reportError(String.format("ExpBinOp Error (%s): invalid type of right expression (expected: boolean, actual: %s", expBinOp.op.toString(), rhsType.toString()));
+                reportError(String.format("ExpBinOp Error (%s): invalid type of right expression (expected: boolean, actual: %s)", expBinOp.op.toString(), rhsType.toString()));
                 return null;
             }
 
@@ -317,12 +359,12 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         }
 
         if (!(lhsType instanceof TyInt)) {
-            reportError(String.format("ExpBinOp Error (%s): invalid type of left expression (expected: int, actual: %s", expBinOp.op.toString(), lhsType.toString()));
+            reportError(String.format("ExpBinOp Error (%s): invalid type of left expression (expected: int, actual: %s)", expBinOp.op.toString(), lhsType.toString()));
             return null;
         }
 
         if (!(rhsType instanceof TyInt)) {
-            reportError(String.format("ExpBinOp Error (%s): invalid type of right expression (expected: int, actual: %s", expBinOp.op.toString(), rhsType.toString()));
+            reportError(String.format("ExpBinOp Error (%s): invalid type of right expression (expected: int, actual: %s)", expBinOp.op.toString(), rhsType.toString()));
             return null;
         }
 
@@ -403,7 +445,7 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
 
     @Override
     public Ty visit(ExpId expId) {
-        Declaration decl = symbolTable.lookup(Symbol.get(expId.id));
+        Declaration decl = symbolTable.lookupField(Symbol.get("v:" + expId.id));
 
         if (decl == null) {
             reportError(String.format("Variable with id %s is not defined", expId.id));

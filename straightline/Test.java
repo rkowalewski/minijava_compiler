@@ -43,6 +43,8 @@ public class Test {
                 SymbolTableVisitor symbolTableVisitor = new SymbolTableVisitor(symbolTable, errors);
                 prg.accept(symbolTableVisitor);
 
+//                System.out.println(prg.prettyPrint());
+
                 if (errors.size() > 0) {
                     System.out.println(String.format("#errors in building symbol table of file %s: %d", filename, errors.size()));
                     for (ErrorMsg msg : errors) {
@@ -59,8 +61,9 @@ public class Test {
                         for (ErrorMsg msg : errors) {
                             System.out.println(msg.getMsg());
                         }
+                    } else {
+                        System.out.println(String.format("file %s parsed successfully!", filename));
                     }
-
                 }
             } finally {
                 inp.close();

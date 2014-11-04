@@ -44,13 +44,13 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
     @Override
     public Void visit(DeclMain declMain) {
         ClassDeclaration clazz = new ClassDeclaration(declMain.className, new TyClass(declMain.className));
-        Symbol s = Symbol.get(declMain.className);
+        Symbol s = Symbol.get("c:" + declMain.className);
         addSymtabEntry(s, clazz);
 
         symbolTable.enterScope();
 
         MethodDeclaration method = new MethodDeclaration(new TyVoid(), Collections.<Ty>emptyList());
-        addSymtabEntry(Symbol.get("mainMethod"), method);
+        addSymtabEntry(Symbol.get("m:mainMethod"), method);
 
         //For the main method we must not enter the method scope
 
@@ -62,7 +62,7 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
     @Override
     public Void visit(DeclClass declClass) {
         ClassDeclaration clazz = new ClassDeclaration(declClass.className, new TyClass(declClass.className));
-        Symbol s = Symbol.get(declClass.className);
+        Symbol s = Symbol.get("c:" + declClass.className);
         addSymtabEntry(s, clazz);
 
         symbolTable.enterScope();
@@ -81,7 +81,7 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
 
     @Override
     public Void visit(DeclVar declVar) {
-        Symbol symbol = Symbol.get(declVar.name);
+        Symbol symbol = Symbol.get("v:" + declVar.name);
         VarDeclaration d = new VarDeclaration(declVar.ty);
         addSymtabEntry(symbol, d);
         return null;
@@ -98,7 +98,7 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
 
         // Push the method declaration onto the symbol table
         MethodDeclaration declaration = new MethodDeclaration(declMeth.ty, argumentTypes);
-        addSymtabEntry(Symbol.get(declMeth.methodName), declaration);
+        addSymtabEntry(Symbol.get("m:" + declMeth.methodName), declaration);
 
 
         // Increment the scope

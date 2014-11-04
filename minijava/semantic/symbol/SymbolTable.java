@@ -4,6 +4,8 @@ import minijava.semantic.node.ClassDeclaration;
 import minijava.semantic.node.Declaration;
 import minijava.semantic.node.MethodDeclaration;
 
+import java.util.Iterator;
+
 public class SymbolTable {
 
     private Scope root;		// root of the scope tree
@@ -26,8 +28,8 @@ public class SymbolTable {
         cur.put(key, decl);
     }
 
-    public Declaration lookup(Symbol key) {
-        return cur.lookup(key);
+    public Declaration lookupField(Symbol key) {
+        return cur.lookup(key, true);
     }
 
     public ClassDeclaration getCurrentClass() {
@@ -35,14 +37,32 @@ public class SymbolTable {
     }
 
     public MethodDeclaration lookupMethodInClass(Symbol clazz, Symbol method) {
-        ClassDeclaration classDecl = (ClassDeclaration) root.lookupTopDownWithKind(clazz, Declaration.Kind.CLASS);
-        MethodDeclaration methodDecl = (MethodDeclaration) root.lookupTopDownWithKind(method, Declaration.Kind.METHOD);
+        ClassDeclaration classDecl = (ClassDeclaration) lookupTopDownWithKind(root, clazz, null);
 
-        if (methodDecl.getDeclaringClass().equals(classDecl)) {
-            return methodDecl;
+        if (classDecl == null) {
+            return null;
         }
 
-        return null;
+        MethodDeclaration methodDecl = (MethodDeclaration) lookupTopDownWithKind(root, method, classDecl);
+
+        return methodDecl;
+    }
+
+    private Declaration lookupTopDownWithKind(Scope scope, Symbol key, Declaration parent) {
+        Declaration decl = scope.lookup(key, false);
+        if (decl != null && (parent == null || parent.equals(scope.getParentElement()))) {
+            return decl;
+        } else {
+            Iterator<Scope> itChildren = scope.getChildren().iterator();
+            Declaration result = null;
+
+            while(itChildren.hasNext() && result == null) {
+                Scope child = itChildren.next();
+                result = lookupTopDownWithKind(child, key, parent);
+            }
+
+            return result;
+        }
     }
 
     public Scope getRoot() {

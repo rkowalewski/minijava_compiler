@@ -72,15 +72,18 @@ public class Scope {
         return nxt;
     }
 
-    public Declaration lookup(Symbol key) {
+    public Declaration lookup(Symbol key, boolean lookupRecursive) {
         if (records.containsKey(key)) {
             return records.get(key);
         } else {
-            if (parentScope == null) {
-                return null;
-            } else {
-                return parentScope.lookup(key);
+            if (lookupRecursive) {
+                if (parentScope == null) {
+                    return null;
+                } else {
+                    return parentScope.lookup(key, lookupRecursive);
+                }
             }
+            return null;
         }
     }
 
@@ -96,18 +99,8 @@ public class Scope {
         return parentScope.getParentElementByKind(kind);
     }
 
-    public Declaration lookupTopDownWithKind(Symbol key, Declaration.Kind kind) {
-        if (records.containsKey(key) && records.get(key).getKind() == kind) {
-            return records.get(key);
-        } else {
-            Iterator<Scope> itChildren = children.iterator();
-            Declaration result = null;
-            while(itChildren.hasNext() && result == null) {
-                Scope child = itChildren.next();
-                result = child.lookupTopDownWithKind(key, kind);
-            }
-            return result;
-        }
+    public Declaration getParentElement() {
+        return parentElement;
     }
 
     public void resetScope() {
