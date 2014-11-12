@@ -17,7 +17,7 @@ public abstract class Declaration {
     public abstract Kind getKind();
 
     public enum Kind {
-        VARIABLE, METHOD, CLASS;
+        VARIABLE, PARAMETER, METHOD, CLASS;
     }
 
     @Override

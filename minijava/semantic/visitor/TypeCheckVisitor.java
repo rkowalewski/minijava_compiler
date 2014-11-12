@@ -2,6 +2,7 @@ package minijava.semantic.visitor;
 
 import minijava.semantic.node.Declaration;
 import minijava.semantic.node.MethodDeclaration;
+import minijava.semantic.node.VarDeclaration;
 import minijava.semantic.symbol.Symbol;
 import minijava.semantic.symbol.SymbolTable;
 import minijava.syntax.*;
@@ -9,6 +10,7 @@ import minijava.syntax.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 /**
  * User: kowa
@@ -270,7 +272,7 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
             actualArgTypes.add(argExp.accept(this));
         }
 
-        List<Ty> expectedArgTypes = method.getArgTypes();
+        List<Map.Entry<Symbol, VarDeclaration>> expectedArgTypes = new ArrayList<>(method.getArgs().entrySet());
 
         boolean isError = false;
 
@@ -279,7 +281,8 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         } else {
             for (int i = 0; i < expectedArgTypes.size(); i++) {
                 Ty actualType = actualArgTypes.get(i);
-                if (actualType == null || !(expectedArgTypes.get(i).getClass().isAssignableFrom(actualType.getClass()))) {
+                Ty expectedArgType = expectedArgTypes.get(i).getValue().getType();
+                if (actualType == null || !(expectedArgType.getClass().isAssignableFrom(actualType.getClass()))) {
                     isError = true;
                     break;
                 }
@@ -293,6 +296,8 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
             reportError(String.format(msg, objTy.toString(), expInvoke.method, expected, actual));
             return null;
         }
+
+        expInvoke.fullname = objTy + "$" + expInvoke.method;
 
         return method.getType().accept(this);
     }
@@ -445,7 +450,7 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
 
     @Override
     public Ty visit(ExpId expId) {
-        Declaration decl = symbolTable.lookupField(Symbol.get("v:" + expId.id));
+        Declaration decl = symbolTable.lookup(Symbol.get("v:" + expId.id));
 
         if (decl == null) {
             reportError(String.format("Variable with id %s is not defined", expId.id));

@@ -18,6 +18,10 @@ public class Prg {
         return PrettyPrint.prettyPrint(this);
     }
 
+    public void translateIntermediate() {
+
+    }
+
     public <V> V accept(Visitor<V> v) {
         return v.visit(this);
     }

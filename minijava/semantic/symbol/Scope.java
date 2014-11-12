@@ -14,6 +14,7 @@ public class Scope {
     private Scope parentScope;
     private Declaration parentElement;
     private List<Scope> children;
+    private final int level;
     private int nxtPtr;
     private Map<Symbol, Declaration> records;
 
@@ -21,6 +22,7 @@ public class Scope {
         this.parentScope = parentScope;
         this.children = new ArrayList<Scope>();
         this.nxtPtr = 0;
+        this.level = parentScope != null ? parentScope.getLevel() + 1 : -1;
         records = new LinkedHashMap<Symbol, Declaration>();
     }
 
@@ -44,7 +46,7 @@ public class Scope {
         }
 
         if (item.getKind() == Declaration.Kind.METHOD) {
-            ((MethodDeclaration) item).setDeclaringClass((ClassDeclaration)parentElement);
+            ((MethodDeclaration) item).setDeclaringClass((ClassDeclaration) parentElement);
         }
 
         records.put(key, item);
@@ -108,6 +110,10 @@ public class Scope {
         for (int i = 0; i < children.size(); i++) {
             children.get(i).resetScope();
         }
+    }
+
+    public int getLevel() {
+        return level;
     }
 
     public void dump() {

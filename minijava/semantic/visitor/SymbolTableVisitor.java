@@ -1,13 +1,14 @@
 package minijava.semantic.visitor;
 
-import minijava.semantic.node.*;
+import minijava.semantic.node.ClassDeclaration;
+import minijava.semantic.node.Declaration;
+import minijava.semantic.node.MethodDeclaration;
+import minijava.semantic.node.VarDeclaration;
 import minijava.semantic.symbol.DuplicateSymbolException;
 import minijava.semantic.symbol.Symbol;
 import minijava.semantic.symbol.SymbolTable;
 import minijava.syntax.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -49,7 +50,7 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
 
         symbolTable.enterScope();
 
-        MethodDeclaration method = new MethodDeclaration(new TyVoid(), Collections.<Ty>emptyList());
+        MethodDeclaration method = new MethodDeclaration(new TyVoid());
         addSymtabEntry(Symbol.get("m:mainMethod"), method);
 
         //For the main method we must not enter the method scope
@@ -82,22 +83,23 @@ public class SymbolTableVisitor extends DepthFirstVisitor<Void> {
     @Override
     public Void visit(DeclVar declVar) {
         Symbol symbol = Symbol.get("v:" + declVar.name);
-        VarDeclaration d = new VarDeclaration(declVar.ty);
+        VarDeclaration d = new VarDeclaration(declVar.ty, Declaration.Kind.VARIABLE);
+        addSymtabEntry(symbol, d);
+        return null;
+    }
+
+    @Override
+    public Void visit(Parameter parameter) {
+        Symbol symbol = Symbol.get("v:" + parameter.id);
+        VarDeclaration d = new VarDeclaration(parameter.ty, Declaration.Kind.PARAMETER);
         addSymtabEntry(symbol, d);
         return null;
     }
 
     @Override
     public Void visit(DeclMeth declMeth) {
-        // Get the parameter types
-        ArrayList<Ty> argumentTypes = new ArrayList<Ty>();
-
-        for (Parameter param : declMeth.parameters) {
-            argumentTypes.add(param.ty);
-        }
-
-        // Push the method declaration onto the symbol table
-        MethodDeclaration declaration = new MethodDeclaration(declMeth.ty, argumentTypes);
+        // Push the method declaration into the symbol table
+        MethodDeclaration declaration = new MethodDeclaration(declMeth.ty);
         addSymtabEntry(Symbol.get("m:" + declMeth.methodName), declaration);
 
 

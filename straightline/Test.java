@@ -1,5 +1,8 @@
 package straightline;
 
+import minijava.backend.dummymachine.DummyMachineSpecifics;
+import minijava.backend.dummymachine.IntermediateToCmm;
+import minijava.intermediate.visitor.IntermediateTranslationVisitor;
 import minijava.semantic.symbol.SymbolTable;
 import minijava.semantic.visitor.ErrorMsg;
 import minijava.semantic.visitor.SymbolTableVisitor;
@@ -52,6 +55,7 @@ public class Test {
                     }
                     System.exit(1);
                 } else {
+                    //Type Checking
                     TypeCheckVisitor typeCheckVisitor = new TypeCheckVisitor(symbolTable, errors);
                     prg.accept(typeCheckVisitor);
 
@@ -61,9 +65,17 @@ public class Test {
                         for (ErrorMsg msg : errors) {
                             System.out.println(msg.getMsg());
                         }
-                    } else {
-                        System.out.println(String.format("file %s parsed successfully!", filename));
+
+                        System.exit(1);
                     }
+
+                    //Intermediate Translation
+                    IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, new DummyMachineSpecifics());
+                    prg.accept(intermediateTranslation);
+
+                    System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
+
+
                 }
             } finally {
                 inp.close();

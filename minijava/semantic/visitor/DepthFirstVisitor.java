@@ -38,9 +38,6 @@ public abstract class DepthFirstVisitor<V> implements Visitor<V> {
 
     @Override
     public V visit(Parameter parameter) {
-        //Delegate to DeclVar
-        DeclVar declVar = new DeclVar(parameter.ty, parameter.id);
-        declVar.accept(this);
         return null;
     }
 

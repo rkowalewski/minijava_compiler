@@ -1,5 +1,7 @@
 package minijava.semantic.node;
 
+import minijava.intermediate.model.IntermediateMemOffset;
+import minijava.intermediate.tree.TreeExp;
 import minijava.syntax.Ty;
 
 /**
@@ -7,13 +9,37 @@ import minijava.syntax.Ty;
  * Date: 10/29/14
  */
 public class VarDeclaration extends Declaration {
-    public VarDeclaration(Ty type) {
+    private IntermediateMemOffset intermediateMemOffset = null;
+    private TreeExp accessExp = null;
+    private Kind kind;
+
+    public VarDeclaration(Ty type, Kind kind) {
         super(type);
+        this.kind = kind;
     }
 
     @Override
     public Kind getKind() {
-        return Kind.VARIABLE;
+        return kind;
+    }
+
+    public void setAccess(IntermediateMemOffset intermediateMemOffset) {
+        this.intermediateMemOffset = intermediateMemOffset;
+    }
+
+    public void setAccess(TreeExp exp) {
+        this.accessExp = exp;
+    }
+
+    public TreeExp exp(TreeExp thisPointer) {
+        if (accessExp != null) {
+            return accessExp;
+        }
+        if (intermediateMemOffset == null) {
+            throw new RuntimeException("cannot access field without intermediateMemOffset!!");
+        }
+
+        return intermediateMemOffset.exp(thisPointer);
     }
 
 
