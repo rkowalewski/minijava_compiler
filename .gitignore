@@ -1,7 +1,6 @@
-*.class
-straightline/Lexer.java
-straightline/Parser.java
-straightline/Parser_sym.java
+src/parser/Lexer.java
+src/parser/Parser.java
+src/parser/Parser_sym.java
 *~
 
 # Eclipse
