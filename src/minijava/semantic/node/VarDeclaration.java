@@ -31,8 +31,9 @@ public class VarDeclaration extends Declaration {
         this.accessExp = exp;
     }
 
-    public TreeExp exp(TreeExp thisPointer) {
+    public TreeExp fieldAccess(TreeExp thisPointer) {
         if (accessExp != null) {
+            //prefer local variables over field variables
             return accessExp;
         }
         if (intermediateMemOffset == null) {
@@ -40,6 +41,14 @@ public class VarDeclaration extends Declaration {
         }
 
         return intermediateMemOffset.exp(thisPointer);
+    }
+
+    public TreeExp localAccess() {
+        if (accessExp == null) {
+            throw new RuntimeException("cannot access field!!");
+        }
+
+        return fieldAccess(null);
     }
 
 

@@ -74,9 +74,10 @@ public class StmTranslationVisitor implements StmVisitor<TreeStm, RuntimeExcepti
 
         TreeExp cond = s.cond.accept(v);
 
-        TreeStmCJUMP stmTest = new TreeStmCJUMP(TreeStmCJUMP.Rel.EQ, cond, new TreeExpCONST(1), test, done);
+        TreeStmCJUMP stmTest;
 
         if (s.body == null) {
+            stmTest = new TreeStmCJUMP(TreeStmCJUMP.Rel.EQ, cond, new TreeExpCONST(1), test, done);
             return new TreeStmSEQ(
                     new TreeStmLABEL(test),
                     new TreeStmSEQ(
@@ -86,6 +87,8 @@ public class StmTranslationVisitor implements StmVisitor<TreeStm, RuntimeExcepti
             );
         } else {
             Label body = new Label();
+            stmTest = new TreeStmCJUMP(TreeStmCJUMP.Rel.EQ, cond, new TreeExpCONST(1), body, done);
+            TreeStm bodyStm = s.body.accept(this);
             return new TreeStmSEQ(
                     new TreeStmLABEL(test),
                     new TreeStmSEQ(
@@ -93,7 +96,7 @@ public class StmTranslationVisitor implements StmVisitor<TreeStm, RuntimeExcepti
                             new TreeStmSEQ(
                                     new TreeStmLABEL(body),
                                     new TreeStmSEQ(
-                                            s.body.accept(this),
+                                            bodyStm,
                                             new TreeStmSEQ(
                                                     new TreeStmJUMP(new TreeExpNAME(test), Arrays.asList(test)),
                                                     new TreeStmLABEL(done)

@@ -1,13 +1,9 @@
 package minijava.intermediate.visitor;
 
 import minijava.backend.MachineSpecifics;
-import minijava.intermediate.Fragment;
-import minijava.intermediate.FragmentProc;
-import minijava.intermediate.Frame;
-import minijava.intermediate.Label;
+import minijava.intermediate.*;
 import minijava.intermediate.model.IntermediateMemOffset;
-import minijava.intermediate.tree.TreeExp;
-import minijava.intermediate.tree.TreeStm;
+import minijava.intermediate.tree.*;
 import minijava.semantic.node.ClassDeclaration;
 import minijava.semantic.node.MethodDeclaration;
 import minijava.semantic.node.VarDeclaration;
@@ -47,17 +43,13 @@ public class IntermediateTranslationVisitor extends DepthFirstVisitor<Void>{
     public Void visit(DeclClass declClass) {
         symbolTable.enterScope();
 
-        ClassDeclaration klass = symbolTable.getCurrentClass();
-
         int offset = 0;
         int wSize = machineSpecifics.getWordSize();
 
-        klass.setAccess(new IntermediateMemOffset(offset));
-
         for (DeclVar field : declClass.fields) {
-            offset += wSize;
             VarDeclaration fieldDecl = (VarDeclaration) symbolTable.lookup(Symbol.get("v:" + field.name));
             fieldDecl.setAccess(new IntermediateMemOffset(offset));
+            offset += wSize;
         }
 
         for (DeclMeth method : declClass.methods) {
@@ -112,7 +104,13 @@ public class IntermediateTranslationVisitor extends DepthFirstVisitor<Void>{
 
         Frame frame = machineSpecifics.newFrame(new Label("main"), 0);
         TreeStm body = declMain.mainBody.accept(new StmTranslationVisitor(symbolTable, machineSpecifics));
-        createFrameProc(frame, body);
+        Temp temp = new Temp();
+        TreeExp retExp = new TreeExpESEQ(
+                new TreeStmMOVE(new TreeExpTEMP(temp), new TreeExpCONST(0)),
+                new TreeExpTEMP(temp)
+        );
+
+        createFrameProc(frame, frame.makeProc(body, retExp));
 
         symbolTable.exitScope();
         symbolTable.exitScope();

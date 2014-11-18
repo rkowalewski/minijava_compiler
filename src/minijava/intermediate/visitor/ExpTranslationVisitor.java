@@ -41,7 +41,7 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
 
     @Override
     public TreeExp visit(ExpThis e) throws RuntimeException {
-        return symbolTable.getCurrentClass().exp();
+        return ((MethodDeclaration) symbolTable.getCur().getParentElement()).getFrame().getParameter(0);
     }
 
     @Override
@@ -53,19 +53,21 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
 
         Temp t = new Temp();
         TreeExp l_halloc = new TreeExpCALL(new TreeExpNAME(new Label("_halloc")), Arrays.asList(nBytes));
-        TreeStm array = new TreeStmMOVE(new TreeExpTEMP(t), new TreeExpMEM(l_halloc));
-        TreeExp arrayPointer = new TreeExpESEQ(array, new TreeExpTEMP(t));
-        return arrayPointer;
+
+        return new TreeExpESEQ(
+                new TreeStmSEQ(
+                        new TreeStmMOVE(new TreeExpTEMP(t), l_halloc),
+                        new TreeStmMOVE(new TreeExpMEM(new TreeExpTEMP(t)), size)),
+                new TreeExpTEMP(t)
+        );
     }
 
     @Override
     public TreeExp visit(ExpNew e) throws RuntimeException {
         ClassDeclaration clazz = symbolTable.getClassByName(Symbol.get("c:" + e.className));
         TreeExp nBytes = new TreeExpOP(TreeExpOP.Op.MUL, new TreeExpCONST(clazz.getFieldsCount()), new TreeExpCONST(machineSpecifics.getWordSize()));
-        Temp t = new Temp();
         TreeExp l_halloc = new TreeExpCALL(new TreeExpNAME(new Label("_halloc")), Arrays.asList(nBytes));
-        TreeStm obj = new TreeStmMOVE(new TreeExpTEMP(t), new TreeExpMEM(l_halloc));
-        return new TreeExpESEQ(obj, new TreeExpTEMP(t));
+        return l_halloc;
     }
 
     @Override
@@ -130,23 +132,27 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
     public TreeExp visit(ExpArrayGet e) throws RuntimeException {
         TreeExp arrAddr = e.array.accept(this);
         TreeExp offset = e.index.accept(this);
-        //compensate array length
-        offset = new TreeExpOP(TreeExpOP.Op.PLUS, offset, new TreeExpCONST(1));
+        TreeExp lowerBoundCheck = getRelExp(TreeStmCJUMP.Rel.LE, new TreeExpCONST(0), offset, new TreeExpCONST(1), new TreeExpCONST(0));
+        TreeExp upperBoundCheck = getRelExp(TreeStmCJUMP.Rel.LT, offset, new TreeExpMEM(arrAddr), new TreeExpCONST(1), new TreeExpCONST(0));
+        TreeExp combined = getRelExp(TreeStmCJUMP.Rel.EQ, lowerBoundCheck, new TreeExpCONST(0), new TreeExpCONST(0), upperBoundCheck);
 
-        TreeExp loc = new TreeExpOP(TreeExpOP.Op.MUL, new TreeExpCONST(machineSpecifics.getWordSize()), offset);
+        //compensate array length
+        TreeExp offsetPlusOne = new TreeExpOP(TreeExpOP.Op.PLUS, offset, new TreeExpCONST(1));
+        TreeExp loc = new TreeExpOP(TreeExpOP.Op.MUL, new TreeExpCONST(machineSpecifics.getWordSize()), offsetPlusOne);
         TreeExp arrayValue = new TreeExpMEM(new TreeExpOP(TreeExpOP.Op.PLUS, arrAddr, loc));
 
-        return getRelExp(TreeStmCJUMP.Rel.LT, new TreeExpMEM(offset), arrAddr, arrayValue,
+        return getRelExp(TreeStmCJUMP.Rel.EQ, combined, new TreeExpCONST(1),
+                arrayValue,
                 new TreeExpCALL(
                         new TreeExpNAME(new Label("_raise")),
-                        Arrays.<TreeExp>asList(new TreeExpCONST(10))
+                        Arrays.<TreeExp>asList(new TreeExpCONST(-1))
                 )
         );
     }
 
     @Override
     public TreeExp visit(ExpArrayLength e) throws RuntimeException {
-        return e.array.accept(this);
+        return new TreeExpMEM(e.array.accept(this));
     }
 
     @Override
@@ -155,14 +161,7 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
 
         List<TreeExp> args = new ArrayList<>();
 
-        MethodDeclaration parentMethod = (MethodDeclaration) symbolTable.getCur().getParentElement();
-        boolean isRecursive = e.fullname.equals(parentMethod.getFullName());
-
-        if (isRecursive) {
-            args.add(parentMethod.getFrame().getParameter(0));
-        } else {
-            args.add(caller);
-        }
+        args.add(caller);
 
         for (Exp arg : e.args) {
             args.add(arg.accept(this));
@@ -196,16 +195,17 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
 
                 return method.getFrame().getParameter(paramIndex);
             } else {
-                return var.exp(method.getFrame().getParameter(0));
+                return var.localAccess();
             }
         } else {
             //field of class
             var = (VarDeclaration) symbolTable.lookup(key);
-            return var.exp(symbolTable.getCurrentClass().exp());
+            TreeExp thisPointer = new ExpThis().accept(this);
+            return var.fieldAccess(thisPointer);
         }
     }
 
-    private TreeExp getRelExp(TreeStmCJUMP.Rel operator, TreeExp lhs, TreeExp rhs, TreeExp trueSrc, TreeExp falseSrc) {
+    private TreeExp getRelExp(TreeStmCJUMP.Rel operator, TreeExp lhs, TreeExp rhs, TreeExp expTrue, TreeExp expFalse) {
         Label t = new Label();
         Label f = new Label();
         Label j = new Label();
@@ -218,13 +218,13 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
                         new TreeStmSEQ(
                                 new TreeStmLABEL(t),
                                 new TreeStmSEQ(
-                                        new TreeStmMOVE(new TreeExpTEMP(r), trueSrc),
+                                        new TreeStmMOVE(new TreeExpTEMP(r), expTrue),
                                         new TreeStmSEQ(
                                                 new TreeStmJUMP(new TreeExpNAME(j), Arrays.asList(j)),
                                                 new TreeStmSEQ(
                                                         new TreeStmLABEL(f),
                                                         new TreeStmSEQ(
-                                                                new TreeStmMOVE(new TreeExpTEMP(r), falseSrc),
+                                                                new TreeStmMOVE(new TreeExpTEMP(r), expFalse),
                                                                 new TreeStmLABEL(j)
                                                         )
                                                 )

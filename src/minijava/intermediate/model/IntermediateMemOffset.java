@@ -18,7 +18,7 @@ public class IntermediateMemOffset {
 
     public TreeExp exp(TreeExp thisPointer) {
         if (offset == 0) {
-            return new TreeExpMEM(new TreeExpCONST(0));
+            return new TreeExpMEM(thisPointer);
         }
 
         return new TreeExpMEM(new TreeExpOP(TreeExpOP.Op.PLUS, thisPointer, new TreeExpCONST(offset)));

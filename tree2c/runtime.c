@@ -21,14 +21,14 @@ int32_t L_println_int(int32_t n)
 // Print character to the standard output
 int32_t L_print_char(int32_t n)
 {
-  printf("%c",n);
+  printf("%c" "\n",n);
   return 0;
 }
 
 // Abort the execution with an error code
 int32_t L_raise(int32_t rc)
 {
-  fprintf(stderr, "Program terminated with error code %" PRId32 ,rc);
+  fprintf(stderr, "Program terminated with error code %" PRId32 "\n" ,rc);
   exit(rc);
   return 0;
 }

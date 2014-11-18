@@ -1,7 +1,6 @@
 package minijava.semantic.node;
 
 import minijava.intermediate.model.IntermediateMemOffset;
-import minijava.intermediate.tree.TreeExp;
 import minijava.semantic.symbol.Symbol;
 import minijava.syntax.Ty;
 
@@ -55,17 +54,5 @@ public class ClassDeclaration extends Declaration {
 
     public int getMethodsCount() {
         return methods.size();
-    }
-
-    public void setAccess(IntermediateMemOffset intermediateMemOffset) {
-        this.intermediateMemOffset = intermediateMemOffset;
-    }
-
-    public TreeExp exp() {
-        if (intermediateMemOffset == null) {
-            throw new RuntimeException("cannot access field without intermediateMemOffset!!");
-        }
-
-        return intermediateMemOffset.exp(null);
     }
 }
