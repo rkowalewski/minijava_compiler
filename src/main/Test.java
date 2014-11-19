@@ -81,25 +81,35 @@ public class Test {
                     prg.accept(intermediateTranslation);
 
                     if (!intermediateTranslation.getFragmentList().isEmpty()) {
-                        Canon canon = new Canon();
-                        BasicBlock basicBlocksBuilder = new BasicBlock();
-                        TraceSchedule scheduler = new TraceSchedule();
+                        boolean doCanon = true;
 
-                        List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
+                        if (doCanon) {
+                            Canon canon = new Canon();
+                            BasicBlock basicBlocksBuilder = new BasicBlock();
+                            TraceSchedule scheduler = new TraceSchedule();
 
-                        for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
-                            //Canonicalize
-                            Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
+                            List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
+                            List<Fragment<List<TreeStm>>> canonedFrags = new ArrayList<>();
 
-                            //Build Basic Blocks
-                            Fragment<BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
-                            //Trace the Basic Blocks
-                            Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
+                            for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
+                                //Canonicalize
+                                Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
+                                canonedFrags.add(canonicalized);
 
-                            scheduledFrags.add(scheduledBlocks);
+                                //Build Basic Blocks
+                                Fragment<BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
+                                //Trace the Basic Blocks
+                                Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
+
+                                scheduledFrags.add(scheduledBlocks);
+                            }
+
+                            System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
+                        } else {
+                            System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
+
                         }
 
-                        System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
                     } else {
                         System.out.println("Empty Program!!");
                     }

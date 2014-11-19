@@ -36,7 +36,29 @@ public class TraceSchedule implements FragmentVisitor<BasicBlockList, Fragment<L
                 labelBlockDict.put(((TreeStmLABEL) block.get(0)).label, block);
             }
 
-            return processNextBlock();
+            List<TreeStm> statementList = processNextBlock();
+
+            omitJumps(statementList);
+
+            return statementList;
+        }
+
+        private void omitJumps(List<TreeStm> processedBlocks) {
+            if (processedBlocks.size() > 1) {
+                for (int i = 1; i < processedBlocks.size(); i++) {
+                    TreeStm current = processedBlocks.get(i);
+                    TreeStm last = processedBlocks.get(i-1);
+                    if (current instanceof TreeStmLABEL && last instanceof TreeStmJUMP) {
+                        TreeStmLABEL stmLabel = (TreeStmLABEL) current;
+                        TreeStmJUMP stmJump = (TreeStmJUMP) last;
+
+                        if (stmJump.poss.size() == 1 && stmLabel.label.equals(stmJump.poss.get(0))) {
+                            processedBlocks.remove(i-1);
+                            i -= 1;
+                        }
+                    }
+                }
+            }
         }
 
         private List<TreeStm> processNextBlock() {
@@ -70,7 +92,7 @@ public class TraceSchedule implements FragmentVisitor<BasicBlockList, Fragment<L
                 List<TreeStm> targetBlock = labelBlockDict.get(label);
 
                 if (jump.poss.size() == 1 && targetBlock != null) {
-                    trace(targetBlock);
+                     trace(targetBlock);
                 } else {
                     processNextBlock();
                 }
