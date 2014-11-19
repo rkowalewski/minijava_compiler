@@ -2,6 +2,12 @@ package main;
 
 import minijava.backend.dummymachine.DummyMachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
+import minijava.intermediate.Fragment;
+import minijava.intermediate.canon.BasicBlock;
+import minijava.intermediate.canon.BasicBlockList;
+import minijava.intermediate.canon.Canon;
+import minijava.intermediate.canon.TraceSchedule;
+import minijava.intermediate.tree.TreeStm;
 import minijava.intermediate.visitor.IntermediateTranslationVisitor;
 import minijava.semantic.symbol.SymbolTable;
 import minijava.semantic.visitor.ErrorMsg;
@@ -49,8 +55,6 @@ public class Test {
                 SymbolTableVisitor symbolTableVisitor = new SymbolTableVisitor(symbolTable, errors);
                 prg.accept(symbolTableVisitor);
 
-//                System.out.println(prg.prettyPrint());
-
                 if (errors.size() > 0) {
                     System.out.println(String.format("#errors in building symbol table of file %s: %d", filename, errors.size()));
                     for (ErrorMsg msg : errors) {
@@ -76,7 +80,29 @@ public class Test {
                     IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, new DummyMachineSpecifics());
                     prg.accept(intermediateTranslation);
 
-                    System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
+                    if (!intermediateTranslation.getFragmentList().isEmpty()) {
+                        Canon canon = new Canon();
+                        BasicBlock basicBlocksBuilder = new BasicBlock();
+                        TraceSchedule scheduler = new TraceSchedule();
+
+                        List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
+
+                        for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
+                            //Canonicalize
+                            Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
+
+                            //Build Basic Blocks
+                            Fragment<BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
+                            //Trace the Basic Blocks
+                            Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
+
+                            scheduledFrags.add(scheduledBlocks);
+                        }
+
+                        System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
+                    } else {
+                        System.out.println("Empty Program!!");
+                    }
                 }
             } finally {
                 inp.close();
