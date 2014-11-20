@@ -50,6 +50,4 @@ public class VarDeclaration extends Declaration {
 
         return fieldAccess(null);
     }
-
-
 }

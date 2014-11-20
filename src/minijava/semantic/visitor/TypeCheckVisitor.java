@@ -1,5 +1,6 @@
 package minijava.semantic.visitor;
 
+import minijava.semantic.node.ClassDeclaration;
 import minijava.semantic.node.Declaration;
 import minijava.semantic.node.MethodDeclaration;
 import minijava.semantic.node.VarDeclaration;
@@ -10,7 +11,6 @@ import minijava.syntax.*;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
  * User: kowa
@@ -272,7 +272,11 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
             actualArgTypes.add(argExp.accept(this));
         }
 
-        List<Map.Entry<Symbol, VarDeclaration>> expectedArgTypes = new ArrayList<>(method.getArgs().entrySet());
+        List<Ty> expectedArgTypes = new ArrayList<>();
+
+        for (VarDeclaration var : method.getArgs().values()) {
+            expectedArgTypes.add(var.getType());
+        }
 
         boolean isError = false;
 
@@ -281,7 +285,7 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
         } else {
             for (int i = 0; i < expectedArgTypes.size(); i++) {
                 Ty actualType = actualArgTypes.get(i);
-                Ty expectedArgType = expectedArgTypes.get(i).getValue().getType();
+                Ty expectedArgType = expectedArgTypes.get(i);
                 if (actualType == null || !(expectedArgType.getClass().isAssignableFrom(actualType.getClass()))) {
                     isError = true;
                     break;
@@ -463,6 +467,15 @@ public class TypeCheckVisitor extends DepthFirstVisitor<Ty> {
 
     @Override
     public Ty visit(Ty ty) {
+
+        if (ty instanceof TyClass) {
+            ClassDeclaration klazz = symbolTable.getClassByName(Symbol.get("c:" + ty.toString()));
+
+            if (klazz == null) {
+                reportError(String.format("Type %s is not declared", ty.toString()));
+                return null;
+            }
+        }
         return ty;
     }
 

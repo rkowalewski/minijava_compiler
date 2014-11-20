@@ -119,6 +119,7 @@ public class Test {
             }
         } catch (ParseException ex) {
             System.out.println("Parse error!\n" + ex.getMessage());
+            System.exit(1);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
