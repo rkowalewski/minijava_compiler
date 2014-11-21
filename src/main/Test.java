@@ -4,7 +4,6 @@ import minijava.backend.dummymachine.DummyMachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.intermediate.Fragment;
 import minijava.intermediate.canon.BasicBlock;
-import minijava.intermediate.canon.BasicBlockList;
 import minijava.intermediate.canon.Canon;
 import minijava.intermediate.canon.TraceSchedule;
 import minijava.intermediate.tree.TreeStm;
@@ -97,7 +96,7 @@ public class Test {
                                 canonedFrags.add(canonicalized);
 
                                 //Build Basic Blocks
-                                Fragment<BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
+                                Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
                                 //Trace the Basic Blocks
                                 Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
 

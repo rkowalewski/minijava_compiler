@@ -12,9 +12,9 @@ import java.util.*;
  * User: kowa
  * Date: 11/19/14
  */
-public class TraceSchedule implements FragmentVisitor<BasicBlockList, Fragment<List<TreeStm>>> {
+public class TraceSchedule implements FragmentVisitor<BasicBlock.BasicBlockList, Fragment<List<TreeStm>>> {
     @Override
-    public Fragment<List<TreeStm>> visit(FragmentProc<BasicBlockList> fragProc) {
+    public Fragment<List<TreeStm>> visit(FragmentProc<BasicBlock.BasicBlockList> fragProc) {
         TraceScheduleProcessor proc = new TraceScheduleProcessor(fragProc.body);
         return new FragmentProc<>(fragProc.frame, proc.scheduleBasicBlocks());
     }
@@ -23,9 +23,9 @@ public class TraceSchedule implements FragmentVisitor<BasicBlockList, Fragment<L
         private Map<Label, List<TreeStm>> labelBlockDict;
         private LinkedList<TreeStm> statements = new LinkedList();
         private LinkedList<List<TreeStm>> basicBlocks;
-        private BasicBlockList basicBlockList;
+        private BasicBlock.BasicBlockList basicBlockList;
 
-        private TraceScheduleProcessor(BasicBlockList basicBlockList) {
+        private TraceScheduleProcessor(BasicBlock.BasicBlockList basicBlockList) {
             this.basicBlockList = basicBlockList;
             this.labelBlockDict = new HashMap<>();
             this.basicBlocks = new LinkedList<>(basicBlockList.blocks);

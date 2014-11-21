@@ -14,7 +14,7 @@ import java.util.List;
  * User: kowa
  * Date: 11/19/14
  */
-public class BasicBlock implements FragmentVisitor<List<TreeStm>, Fragment<BasicBlockList>> {
+public class BasicBlock implements FragmentVisitor<List<TreeStm>, Fragment<BasicBlock.BasicBlockList>> {
 
     @Override
     public Fragment<BasicBlockList> visit(FragmentProc<List<TreeStm>> fragProc) {
@@ -69,5 +69,15 @@ public class BasicBlock implements FragmentVisitor<List<TreeStm>, Fragment<Basic
             }
         }
 
+    }
+
+    public static class BasicBlockList {
+        public final List<List<TreeStm>> blocks;
+        public final Label done;
+
+        public BasicBlockList(List<List<TreeStm>> blocks, Label done) {
+            this.blocks = new LinkedList<>(blocks);
+            this.done = done;
+        }
     }
 }
