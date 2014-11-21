@@ -23,11 +23,11 @@ public class TraceSchedule implements FragmentVisitor<BasicBlock.BasicBlockList,
         private Map<Label, List<TreeStm>> labelBlockDict;
         private LinkedList<TreeStm> statements = new LinkedList();
         private LinkedList<List<TreeStm>> basicBlocks;
-        private BasicBlock.BasicBlockList basicBlockList;
+        private final Label labelDone;
 
         private TraceScheduleProcessor(BasicBlock.BasicBlockList basicBlockList) {
-            this.basicBlockList = basicBlockList;
             this.labelBlockDict = new HashMap<>();
+            this.labelDone = basicBlockList.done;
             this.basicBlocks = new LinkedList<>(basicBlockList.blocks);
         }
 
@@ -64,7 +64,7 @@ public class TraceSchedule implements FragmentVisitor<BasicBlock.BasicBlockList,
         private List<TreeStm> processNextBlock() {
 
             if (basicBlocks.isEmpty()) {
-                statements.add(new TreeStmLABEL(basicBlockList.done));
+                statements.add(new TreeStmLABEL(labelDone));
             } else {
                 List<TreeStm> block = basicBlocks.removeFirst();
                 TreeStmLABEL stmLabel = (TreeStmLABEL) block.get(0);
