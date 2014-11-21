@@ -18,11 +18,11 @@ public class BasicBlock implements FragmentVisitor<List<TreeStm>, Fragment<Basic
 
     @Override
     public Fragment<BasicBlockList> visit(FragmentProc<List<TreeStm>> fragProc) {
-        BasicBlocksProcessor proc = new BasicBlocksProcessor();
+        BasicBlockProcessor proc = new BasicBlockProcessor();
         return new FragmentProc<>(fragProc.frame, proc.buildBasicBlocks(new LinkedList(fragProc.body)));
     }
 
-    private static class BasicBlocksProcessor {
+    private static class BasicBlockProcessor {
         private final List<List<TreeStm>> blocks = new LinkedList<>();
         private final Label done = new Label();
         private LinkedList<TreeStm> currentBlock;
