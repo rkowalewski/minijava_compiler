@@ -1,14 +1,1 @@
-Die Progamme lassen sich mit `make` uebersetzen.
-
-Die so uebersetzten Programme erwarten die 
-Java-Cup-Laufzeitbibliothek im Classpath. Dazu kann
-die Datei /soft/IFI/lang/java-cup/java-cup-v11a.jar in
-den Classpath aufgenommen werden.
-
-Das Testprogramm Test.java erwartet den Dateinamen eines
-Straightline-Programms als Kommandozeilenargument. Es kann
-folgendermaßen gestartet werden.
-
-   java -cp .:/soft/IFI/lang/java-cup/java-cup-v11a.jar straightline.Test example.sl
-
-Dieses Testprogramm parst die Eingabedatei.
+Minijava Compiler Project
