@@ -18,7 +18,7 @@
 // 1
 // 999
 
-class TestPrime {
+class ManyArgs {
     public static void main(String[] a){
       System.out.println((new Prime()).test_it(1,2,3,4,5,10,89));
     }

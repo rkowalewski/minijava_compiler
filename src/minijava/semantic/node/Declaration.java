@@ -18,6 +18,14 @@ public abstract class Declaration {
 
     public enum Kind {
         VARIABLE, PARAMETER, METHOD, CLASS;
+
+        public boolean isScopeCompatible(Kind other) {
+            if (other == PARAMETER || other == VARIABLE) {
+                return this != VARIABLE && this != PARAMETER;
+            } else {
+                return this != other;
+            }
+        }
     }
 
     @Override

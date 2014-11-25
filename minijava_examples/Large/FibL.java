@@ -4,7 +4,7 @@
 // 1973
 // -----------------------------------------------------------------------------
 
-class Fib {
+class FibL {
     public static void main(String[] a){
 	System.out.println(new FibAux().nfib_lazy(15));
     }

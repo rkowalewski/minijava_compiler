@@ -44,7 +44,7 @@ public class Scope {
 
     public void put(Symbol key, Declaration item) {
 
-        if (records.containsKey(key) && records.get(key).getKind() == item.getKind()) {
+        if (records.containsKey(key) && !records.get(key).getKind().isScopeCompatible(item.getKind())) {
             throw new DuplicateSymbolException(String.format("Duplicate %s: %s is already defined in current Scope!", item.getKind(), key.toString()));
         }
 

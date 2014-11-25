@@ -1,6 +1,6 @@
 // Should return 5
 
-class Scope {
+class ScopeTwo {
     public static void main (String[] argv) {
 	System.out.println (new S().run(5, 10));
     }
