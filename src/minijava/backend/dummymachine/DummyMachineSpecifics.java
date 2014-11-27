@@ -39,7 +39,7 @@ public class DummyMachineSpecifics implements MachineSpecifics {
 
   @Override
   public Fragment<List<Assem>> codeGen(Fragment<List<TreeStm>> frag) {
-    throw new UnsupportedOperationException("Generic machine doesn't support assembly code!");
+      throw new UnsupportedOperationException("Generic machine doesn't support assembly code!");
   }
 
   @Override

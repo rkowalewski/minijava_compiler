@@ -10,17 +10,20 @@ import java.util.List;
 // Assumption: is immutable!
 public interface Assem {
 
-  public List<Temp> use();
+    //src list
+    public List<Temp> use();
 
-  public List<Temp> def();
+    //dest list
+    public List<Temp> def();
 
-  public List<Label> jumps();
+    //list of possible dest labels: if empty --> fall through
+    public List<Label> jumps();
 
-  public boolean isFallThrough();
+    public boolean isFallThrough();
 
-  public Pair<Temp, Temp> isMoveBetweenTemps();
+    public Pair<Temp, Temp> isMoveBetweenTemps();
 
-  public Label isLabel();
+    public Label isLabel();
 
-  public Assem rename(Function<Temp, Temp> sigma);
+    public Assem rename(Function<Temp, Temp> sigma);
 }

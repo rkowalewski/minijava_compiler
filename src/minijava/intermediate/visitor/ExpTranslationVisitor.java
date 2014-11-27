@@ -48,8 +48,8 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
     public TreeExp visit(ExpNewIntArray e) throws RuntimeException {
         TreeExp size = e.size.accept(this);
 
-        TreeExp sizePlusOne = new TreeExpOP(TreeExpOP.Op.PLUS, size, new TreeExpCONST(1));
-        TreeExp nBytes = new TreeExpOP(TreeExpOP.Op.MUL, sizePlusOne, new TreeExpCONST(machineSpecifics.getWordSize()));
+        TreeExp sizePlusOne = plus(size, new TreeExpCONST(1), true);
+        TreeExp nBytes = mul(sizePlusOne, new TreeExpCONST(machineSpecifics.getWordSize()), true);
 
         Temp t = new Temp();
         TreeExp l_halloc = new TreeExpCALL(new TreeExpNAME(new Label("_halloc")), Arrays.asList(nBytes));
@@ -65,7 +65,7 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
     @Override
     public TreeExp visit(ExpNew e) throws RuntimeException {
         ClassDeclaration clazz = symbolTable.getClassByName(Symbol.get("c:" + e.className));
-        TreeExp nBytes = new TreeExpOP(TreeExpOP.Op.MUL, new TreeExpCONST(clazz.getFieldsCount()), new TreeExpCONST(machineSpecifics.getWordSize()));
+        TreeExp nBytes = mul(new TreeExpCONST(clazz.getFieldsCount()), new TreeExpCONST(machineSpecifics.getWordSize()), true);
         TreeExp l_halloc = new TreeExpCALL(new TreeExpNAME(new Label("_halloc")), Arrays.asList(nBytes));
         return l_halloc;
     }
@@ -118,7 +118,18 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
         }
 
         if (arithmeticOperator != null) {
+            if (arithmeticOperator == TreeExpOP.Op.PLUS) {
+                return plus(e.left.accept(this), e.right.accept(this), true);
+            } else if (arithmeticOperator == TreeExpOP.Op.MINUS) {
+                return plus(e.left.accept(this), e.right.accept(this), false);
+            } else if (arithmeticOperator == TreeExpOP.Op.MUL) {
+                return mul(e.left.accept(this), e.right.accept(this), true);
+            } else if (arithmeticOperator == TreeExpOP.Op.DIV) {
+                return mul(e.left.accept(this), e.right.accept(this), false);
+            }
+
             return new TreeExpOP(arithmeticOperator, e.left.accept(this), e.right.accept(this));
+
         } else if (e.op == ExpBinOp.Op.LT) {
             //LessThan
             return getRelExp(TreeStmCJUMP.Rel.LT, e.left.accept(this), e.right.accept(this), new TreeExpCONST(1), new TreeExpCONST(0));
@@ -137,9 +148,9 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
         TreeExp combined = getRelExp(TreeStmCJUMP.Rel.EQ, lowerBoundCheck, new TreeExpCONST(0), new TreeExpCONST(0), upperBoundCheck);
 
         //compensate array length
-        TreeExp offsetPlusOne = new TreeExpOP(TreeExpOP.Op.PLUS, offset, new TreeExpCONST(1));
-        TreeExp loc = new TreeExpOP(TreeExpOP.Op.MUL, new TreeExpCONST(machineSpecifics.getWordSize()), offsetPlusOne);
-        TreeExp arrayValue = new TreeExpMEM(new TreeExpOP(TreeExpOP.Op.PLUS, arrAddr, loc));
+        TreeExp offsetPlusOne = plus(offset, new TreeExpCONST(1), true);
+        TreeExp loc = mul(new TreeExpCONST(machineSpecifics.getWordSize()), offsetPlusOne, true);
+        TreeExp arrayValue = new TreeExpMEM(plus(arrAddr, loc, true));
 
         return getRelExp(TreeStmCJUMP.Rel.EQ, combined, new TreeExpCONST(1),
                 arrayValue,
@@ -236,4 +247,60 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
         );
     }
 
+    TreeExp plus(TreeExp left, TreeExp right, boolean plus) {
+        if (left instanceof TreeExpCONST && right instanceof TreeExpCONST) {
+            TreeExpCONST cLeft = (TreeExpCONST) left;
+            TreeExpCONST cRight = (TreeExpCONST) right;
+
+            if (!plus) {
+                return new TreeExpCONST(cLeft.value - cRight.value);
+            }
+
+            return new TreeExpCONST(cLeft.value + cRight.value);
+        }
+
+        if (!plus) {
+            return new TreeExpOP(TreeExpOP.Op.MINUS, left, right);
+        }
+
+        return new TreeExpOP(TreeExpOP.Op.PLUS, left, right);
+    }
+
+    TreeExp mul(TreeExp left, TreeExp right, boolean mul) {
+        if (left instanceof TreeExpCONST && right instanceof TreeExpCONST) {
+            TreeExpCONST c1 = (TreeExpCONST) left;
+            TreeExpCONST c2 = (TreeExpCONST) right;
+
+            if (mul) {
+                return new TreeExpCONST(c1.value * c2.value);
+            }
+            return new TreeExpCONST(c1.value / c2.value);
+        } else if (left instanceof TreeExpCONST && ((TreeExpCONST) left).value % 2 == 0) {
+            int val = log2(((TreeExpCONST) left).value);
+
+            if (mul) {
+                return new TreeExpOP(TreeExpOP.Op.LSHIFT, right, new TreeExpCONST(val));
+            }
+
+            return new TreeExpOP(TreeExpOP.Op.RSHIFT, right, new TreeExpCONST(val));
+        } else if (right instanceof TreeExpCONST && ((TreeExpCONST) right).value % 2 == 0) {
+            int val = log2(((TreeExpCONST) right).value);
+
+            if (mul) {
+                return new TreeExpOP(TreeExpOP.Op.LSHIFT, left, new TreeExpCONST(val));
+            }
+
+            return new TreeExpOP(TreeExpOP.Op.RSHIFT, left, new TreeExpCONST(val));
+        }
+
+        if (mul) {
+            return new TreeExpOP(TreeExpOP.Op.MUL, left, right);
+        }
+
+        return new TreeExpOP(TreeExpOP.Op.DIV, left, right);
+    }
+
+    private int log2(int n) {
+        return (int) (Math.log10(n) / Math.log10(2));
+    }
 }

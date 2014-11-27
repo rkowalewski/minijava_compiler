@@ -1,7 +1,8 @@
 package main;
 
-import minijava.backend.dummymachine.DummyMachineSpecifics;
+import minijava.backend.MachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
+import minijava.backend.i386.x86MachineSpecifics;
 import minijava.intermediate.Fragment;
 import minijava.intermediate.canon.BasicBlock;
 import minijava.intermediate.canon.Canon;
@@ -76,7 +77,8 @@ public class Test {
                     }
 
                     //Intermediate Translation
-                    IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, new DummyMachineSpecifics());
+                    MachineSpecifics machineSpecifics = new x86MachineSpecifics();
+                    IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
                     prg.accept(intermediateTranslation);
 
                     if (!intermediateTranslation.getFragmentList().isEmpty()) {
@@ -101,6 +103,8 @@ public class Test {
                                 Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
 
                                 scheduledFrags.add(scheduledBlocks);
+
+                                //Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
                             }
 
                             System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));

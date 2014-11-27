@@ -1,8 +1,5 @@
 package minijava.backend.i386;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import minijava.intermediate.Temp;
 import minijava.util.Function;
 
@@ -40,10 +37,10 @@ abstract class Operand {
 
   final static class Mem extends Operand {
 
-    public final Temp base;  // maybe null
-    public final Integer scale; // null or 1, 2, 4 or 8;
-    public final Temp index;  // maybe null
-    public final int displacement;
+    public final Temp base;  // base adress (for example of array)
+    public final Integer scale; // null or 1, 2, 4 or 8; --> usually 4 Bytes (DWORD) in 32 bit address mode
+    public final Temp index;  // index (for example the index of array item)
+    public final int displacement; //usually 0
 
     public Mem(Temp base, Integer scale, Temp index, int displacement) {
       assert (scale == null || (scale == 1 || scale == 2 || scale == 4 || scale == 8));

@@ -136,8 +136,8 @@ public class StmTranslationVisitor implements StmVisitor<TreeStm, RuntimeExcepti
         ExpTranslationVisitor v = new ExpTranslationVisitor(symbolTable, machineSpecifics);
         TreeExp arrAddr = new ExpId(s.id).accept(v);
         TreeExp offset = s.index.accept(v);
-        offset = new TreeExpOP(TreeExpOP.Op.PLUS, offset, new TreeExpCONST(1));
-        TreeExp loc = new TreeExpOP(TreeExpOP.Op.MUL, offset, new TreeExpCONST(machineSpecifics.getWordSize()));
+        offset = v.plus(offset, new TreeExpCONST(1), true);
+        TreeExp loc = v.mul(offset, new TreeExpCONST(machineSpecifics.getWordSize()), true);
         return new TreeStmMOVE(new TreeExpMEM(new TreeExpOP(TreeExpOP.Op.PLUS, arrAddr, loc)), s.rhs.accept(v));
     }
 }
