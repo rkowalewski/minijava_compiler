@@ -1,7 +1,5 @@
 .intel_syntax noprefix
-.text
 .globl Lmain
-.type Lmain, @function
 
 Lmain:
   push ebp
