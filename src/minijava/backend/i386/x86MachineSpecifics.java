@@ -2,11 +2,7 @@ package minijava.backend.i386;
 
 import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
-import minijava.backend.dummymachine.DummyMachineFrame;
-import minijava.intermediate.Fragment;
-import minijava.intermediate.Frame;
-import minijava.intermediate.Label;
-import minijava.intermediate.Temp;
+import minijava.intermediate.*;
 import minijava.intermediate.tree.TreeStm;
 
 import java.util.List;
@@ -16,6 +12,7 @@ import java.util.List;
  * Date: 11/26/14
  */
 public class x86MachineSpecifics implements MachineSpecifics {
+
     @Override
     public int getWordSize() {
         return 4;
@@ -33,7 +30,7 @@ public class x86MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Frame newFrame(Label name, int paramCount) {
-        return new DummyMachineFrame(name, paramCount);
+        return new x86FrameImpl(name, paramCount);
     }
 
     @Override
@@ -43,17 +40,39 @@ public class x86MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Fragment<List<Assem>> codeGen(Fragment<List<TreeStm>> frag) {
-        return frag.accept(new CodegenVisitor());
+        return frag.accept(new x86CodegenVisitor());
     }
 
     @Override
     public String printAssembly(List<Fragment<List<Assem>>> frags) {
-        //Prologue
+        StringBuilder builder = new StringBuilder();
 
-        //Body
+        builder.append(".intel_syntax\n");
 
-        //Epilogue
+        for (Fragment<List<Assem>> frag : frags) {
 
-        return "";
+            FragmentProc<List<Assem>> fragProc = (FragmentProc<List<Assem>>) frag;
+
+            String frameName = fragProc.frame.getName().toString();
+            builder.append(".globl ").append(frameName).append("\n");
+            builder.append(".type ").append(frameName).append(", ").append("@function\n");
+
+            for (Assem asm : fragProc.body) {
+
+                String line = asm.toString();
+
+                builder.append(line);
+
+                char last = line.charAt(line.length() - 1);
+
+                if (!(String.valueOf(last).equals("\n"))) {
+                    builder.append("\n");
+                }
+            }
+
+            builder.append("\n\n");
+        }
+
+        return builder.toString();
     }
 }

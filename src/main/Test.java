@@ -1,5 +1,6 @@
 package main;
 
+import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.backend.i386.x86MachineSpecifics;
@@ -92,6 +93,8 @@ public class Test {
                             List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
                             List<Fragment<List<TreeStm>>> canonedFrags = new ArrayList<>();
 
+                            List<Fragment<List<Assem>>> asmFrags = new ArrayList<>();
+
                             for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
                                 //Canonicalize
                                 Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
@@ -104,10 +107,14 @@ public class Test {
 
                                 scheduledFrags.add(scheduledBlocks);
 
-                                //Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
+                                Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
+
+                                asmFrags.add(assemList);
                             }
 
-                            System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
+//                            System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
+
+                            System.out.println(machineSpecifics.printAssembly(asmFrags));
                         } else {
                             System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
 

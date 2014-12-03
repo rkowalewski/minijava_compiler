@@ -1,14 +1,12 @@
 package minijava.backend.i386;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import minijava.backend.Assem;
 import minijava.intermediate.Label;
 import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
+
+import java.util.List;
 
 final class AssemInstr implements Assem {
 
@@ -47,7 +45,7 @@ final class AssemInstr implements Assem {
   }
 
   public String toString() {
-    throw new UnsupportedOperationException("Not supported yet.");
+      return "\t" + kind.toString().toLowerCase();
   }
 
   public Assem rename(Function<Temp, Temp> sigma) {

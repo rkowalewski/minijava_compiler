@@ -1,14 +1,12 @@
 package minijava.backend.i386;
 
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.List;
 import minijava.backend.Assem;
-import minijava.backend.i386.Operand.Reg;
-import minijava.intermediate.Temp;
 import minijava.intermediate.Label;
+import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
+
+import java.util.List;
 
 final class AssemUnaryOp implements Assem {
 
@@ -53,7 +51,7 @@ final class AssemUnaryOp implements Assem {
   }
 
   public String toString() {
-    throw new UnsupportedOperationException("Not supported yet.");
+      return "\t" + kind.toString().toLowerCase() + " " + op;
   }
 
   public Assem rename(Function<Temp, Temp> sigma) {

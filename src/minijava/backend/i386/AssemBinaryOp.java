@@ -65,7 +65,7 @@ final class AssemBinaryOp implements Assem {
     }
 
     public String toString() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return String.format("\t%s %s, %s", kind.toString().toLowerCase(), dst, src);
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
