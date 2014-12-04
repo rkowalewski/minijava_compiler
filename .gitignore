@@ -2,6 +2,7 @@ src/parser/Lexer.java
 src/parser/Parser.java
 src/parser/Parser_sym.java
 *~
+**/*.class
 
 # Eclipse
 .classpath

@@ -3,6 +3,9 @@ package minijava.backend.i386;
 import minijava.intermediate.Frame;
 import minijava.intermediate.Temp;
 
+import java.util.Arrays;
+import java.util.List;
+
 /**
  * User: kowa
  * Date: 12/2/14
@@ -20,4 +23,7 @@ public interface x86Frame extends Frame {
 
     static final Temp ebp = new Temp("ebp");
     static final Temp esp = new Temp("esp");
+
+    static final List<Temp> CALLER_SAVED = Arrays.asList(eax, ecx, edx);
+    static final List<Temp> CALLEE_SAVED = Arrays.asList(ebx, edi, esi);
 }

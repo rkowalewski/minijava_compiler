@@ -5,6 +5,7 @@ import minijava.intermediate.*;
 import minijava.intermediate.tree.*;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,13 +19,17 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
     static {
         prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(x86Frame.ebp)));
         prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.ebp), new Operand.Reg(x86Frame.esp)));
-        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(x86Frame.ebx)));
-        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(x86Frame.edi)));
-        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(x86Frame.esi)));
 
-        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(x86Frame.esi)));
-        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(x86Frame.edi)));
-        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(x86Frame.ebx)));
+        for (Temp calleeSaved : x86Frame.CALLEE_SAVED) {
+            prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(calleeSaved)));
+        }
+
+        List<Temp> calleeReverse = new ArrayList<>(x86Frame.CALLEE_SAVED);
+        Collections.reverse(calleeReverse);
+
+        for (Temp calleeSaved : calleeReverse) {
+            epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(calleeSaved)));
+        }
         epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.esp), new Operand.Reg(x86Frame.ebp)));
         epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(x86Frame.ebp)));
         epilogue.add(new AssemInstr(AssemInstr.Kind.RET));
@@ -39,8 +44,8 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
 
         AssemProcessor assemProcessor = new AssemProcessor((x86Frame) fragProc.frame);
 
-        for (TreeStm stm : treeStms) {
-            assemList.addAll(assemProcessor.munchStm(stm));
+        for (int i = 0; i < treeStms.size(); i++) {
+            assemList.addAll(assemProcessor.munchStm(treeStms.get(i)));
         }
 
         assemList.addAll(0, prologue);
@@ -51,7 +56,7 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
         return new FragmentProc<>(fragProc.frame, assemList);
     }
 
-    private class AssemProcessor {
+    private static class AssemProcessor {
         private final x86Frame x86Frame;
         private List<Assem> resultList = new ArrayList<>();
 
@@ -63,19 +68,15 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
             this.resultList = new ArrayList<>();
 
             if (stm instanceof TreeStmLABEL) {
-                munchStm((TreeStmLABEL)stm);
-            }
-            else if (stm instanceof TreeStmJUMP) {
-                munchStm((TreeStmJUMP)stm);
-            }
-            else if (stm instanceof TreeStmCJUMP) {
-                munchStm((TreeStmCJUMP)stm);
-            }
-            else if (stm instanceof TreeStmMOVE) {
-                munchStm((TreeStmMOVE)stm);
-            }
-            else if (stm instanceof TreeStmEXP) {
-                munchStm((TreeStmEXP)stm);
+                munchStm((TreeStmLABEL) stm);
+            } else if (stm instanceof TreeStmJUMP) {
+                munchStm((TreeStmJUMP) stm);
+            } else if (stm instanceof TreeStmCJUMP) {
+                munchStm((TreeStmCJUMP) stm);
+            } else if (stm instanceof TreeStmMOVE) {
+                munchStm((TreeStmMOVE) stm);
+            } else if (stm instanceof TreeStmEXP) {
+                munchStm((TreeStmEXP) stm);
             }
 
             return resultList;
@@ -83,20 +84,61 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
 
         private void munchStm(TreeStmMOVE move) {
             if (move.dest instanceof TreeExpTEMP) {
+                TreeExpTEMP dst = (TreeExpTEMP) move.dest;
                 if (move.src instanceof TreeExpCONST) {
-                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(((TreeExpTEMP) move.dest).temp), new Operand.Imm(((TreeExpCONST) move.src).value)));
-                } else {
-                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(((TreeExpTEMP) move.dest).temp), new Operand.Reg(munchExp(move.src))));
-                }
+                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(dst.temp), new Operand.Imm(((TreeExpCONST) move.src).value)));
+                } else if (move.src instanceof TreeExpMEM) {
+                    TreeExpMEM mem = (TreeExpMEM) move.src;
 
+                    Operand src;
+
+                    if (mem.addr instanceof TreeExpOP) {
+                        TreeExpOP binOp = (TreeExpOP) mem.addr;
+
+                        if (binOp.op == TreeExpOP.Op.PLUS) {
+                            if (binOp.left instanceof TreeExpCONST) {
+                                src = new Operand.Mem(munchExp(binOp.right), null, null, ((TreeExpCONST) binOp.left).value);
+                            } else if (binOp.right instanceof TreeExpCONST) {
+                                src = new Operand.Mem(munchExp(binOp.left), null, null, ((TreeExpCONST) binOp.right).value);
+                            } else {
+                                src = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
+                            }
+                        } else {
+                            throw new IllegalArgumentException("Invalid Access Mode");
+                        }
+                    } else {
+                        src = new Operand.Mem(munchExp(mem.addr));
+                    }
+
+                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(dst.temp), src));
+
+                } else {
+                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(dst.temp), new Operand.Reg(munchExp(move.src))));
+                }
             } else if (move.dest instanceof TreeExpMEM) {
                 TreeExpMEM mem = (TreeExpMEM) move.dest;
+                Operand dest;
 
-                if (move.src instanceof TreeExpCONST) {
-                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(munchExp(move.dest)), new Operand.Imm(((TreeExpCONST) move.src).value)));
+                if (mem.addr instanceof TreeExpOP) {
+                    TreeExpOP binOp = (TreeExpOP) mem.addr;
+
+                    if (binOp.op == TreeExpOP.Op.PLUS) {
+                        if (binOp.left instanceof TreeExpCONST) {
+                            dest = new Operand.Mem(munchExp(binOp.right), null, null, ((TreeExpCONST) binOp.left).value);
+                        } else if (binOp.right instanceof TreeExpCONST) {
+                            dest = new Operand.Mem(munchExp(binOp.left), null, null, ((TreeExpCONST) binOp.right).value);
+                        } else {
+                            dest = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
+                        }
+                    } else {
+                        throw new IllegalArgumentException("Invalid Access Mode");
+                    }
+
                 } else {
-                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(munchExp(move.dest)), new Operand.Reg(munchExp(move.src))));
+                    dest = new Operand.Mem(munchExp(mem.addr));
                 }
+
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, dest, new Operand.Reg(munchExp(move.src))));
             } else {
                 throw new IllegalArgumentException("the target of a MOV instruction must be either a register or a Memory Address!");
             }
@@ -119,17 +161,19 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
                 int value = ((TreeExpCONST) cjump.right).value;
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.CMP, new Operand.Reg(munchExp(cjump.left)), new Operand.Imm(value)));
 
-                if (cjump.rel == TreeStmCJUMP.Rel.EQ && value == 0) {
-                    emit(new AssemJump(AssemJump.Kind.J, cjump.ltrue, AssemJump.Cond.Z));
-                    return;
-                }
+                //TODO: use this logic when the register allocator is working. The Register Simulator does not support it
+
+//                if (cjump.rel == TreeStmCJUMP.Rel.EQ && value == 0) {
+//                    emit(new AssemJump(AssemJump.Kind.J, cjump.ltrue, AssemJump.Cond.Z));
+//                    return;
+//                }
             } else {
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.CMP, new Operand.Reg(munchExp(cjump.left)), new Operand.Reg(munchExp(cjump.right))));
             }
 
             AssemJump.Cond condition = null;
 
-            switch(cjump.rel) {
+            switch (cjump.rel) {
                 case EQ:
                     condition = AssemJump.Cond.E;
                     break;
@@ -164,17 +208,13 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
                 return munchExp((TreeExpCONST) exp);
             } else if (exp instanceof TreeExpOP) {
                 return munchExp((TreeExpOP) exp);
-            }
-            else if (exp instanceof TreeExpCALL) {
+            } else if (exp instanceof TreeExpCALL) {
                 return munchExp((TreeExpCALL) exp);
-            }
-            else if (exp instanceof TreeExpMEM) {
+            } else if (exp instanceof TreeExpMEM) {
                 return munchExp((TreeExpMEM) exp);
-            }
-            else if (exp instanceof TreeExpTEMP) {
+            } else if (exp instanceof TreeExpTEMP) {
                 return munchExp((TreeExpTEMP) exp);
-            }
-            else if (exp instanceof TreeExpNAME) {
+            } else if (exp instanceof TreeExpNAME) {
                 return munchExp((TreeExpNAME) exp);
             }
 
@@ -219,14 +259,16 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
                     break;
 
                 default:
-                    break;
+                    throw new IllegalArgumentException("cannot handle operator: " + exp.op.toString());
             }
 
-            Temp dest = null;
+            Temp reg;
 
             if (exp.left instanceof TreeExpMEM && exp.right instanceof TreeExpMEM) {
-                dest = new Temp();
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(dest), new Operand.Reg(munchExp(exp.left))));
+                reg = new Temp();
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(munchExp(exp.left))));
+            } else {
+                reg = munchExp(exp.left);
             }
 
             Operand right;
@@ -238,21 +280,22 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
             }
 
             if (binaryOp != null) {
-                dest = dest != null ? dest : munchExp(exp.left);
-                emit(new AssemBinaryOp(binaryOp, new Operand.Reg(dest), right));
-                return dest;
-            } else if (unaryOp != null) {
-                dest = dest != null ? dest : munchExp(exp.left);
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.eax), new Operand.Reg(dest)));
+                emit(new AssemBinaryOp(binaryOp, new Operand.Reg(reg), right));
+                return reg;
+            } else {
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.eax), new Operand.Reg(reg)));
                 emit(new AssemUnaryOp(unaryOp, right));
                 return x86Frame.eax;
-            } else {
-                throw new IllegalArgumentException("cannot process binop!");
             }
         }
 
         private Temp munchExp(TreeExpCALL exp) {
             Label fnLabel = ((TreeExpNAME) exp.func).label;
+
+            //save caller-saved registers
+            for (Temp callerSaved : x86Frame.CALLER_SAVED) {
+                emit(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(callerSaved)));
+            }
 
             //Push args in reverse order
             for (int i = exp.args.size() - 1; i > -1; i--) {
@@ -265,86 +308,52 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.ADD, new Operand.Reg(x86Frame.esp), new Operand.Imm(exp.args.size() * 4)));
             }
 
-            return x86Frame.eax;
-        }
-
-        private Temp munchExp(TreeExpMEM exp) {
-            if (exp.addr instanceof TreeExpTEMP) {
-                return ((TreeExpTEMP) exp.addr).temp;
-            }
-
             Temp reg = new Temp();
 
-            if (exp.addr instanceof TreeExpOP) {
-                TreeExpOP binOp = (TreeExpOP) exp.addr;
+            emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(x86Frame.eax)));
 
-                if (binOp.op == TreeExpOP.Op.PLUS) {
-                    Operand src;
-                    if (binOp.left instanceof TreeExpCONST) {
-                        if (binOp.right instanceof TreeExpOP) {
-                            TreeExpOP baseIndexOP = (TreeExpOP) binOp.right;
-                            if (baseIndexOP.left instanceof TreeExpOP) {
-                                src = calcIndexScaleOp((TreeExpOP) baseIndexOP.left, baseIndexOP.right);
-                            } else if (baseIndexOP.right instanceof TreeExpOP) {
-                                src = calcIndexScaleOp((TreeExpOP) baseIndexOP.right, baseIndexOP.left);
-                            } else {
-                                src = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
-                            }
-                        } else {
-                            src = new Operand.Mem(munchExp(binOp.right), null, null, ((TreeExpCONST) binOp.left).value);
-                        }
-                    } else if (binOp.right instanceof TreeExpCONST) {
-                        if (binOp.left instanceof TreeExpOP) {
-                            TreeExpOP baseIndexOP = (TreeExpOP) binOp.left;
-                            if (baseIndexOP.left instanceof TreeExpOP) {
-                                src = calcIndexScaleOp((TreeExpOP) baseIndexOP.left, baseIndexOP.right);
-                            } else if (baseIndexOP.right instanceof TreeExpOP) {
-                                src = calcIndexScaleOp((TreeExpOP) baseIndexOP.right, baseIndexOP.left);
-                            } else {
-                                src = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
-                            }
-                        } else {
-                            src = new Operand.Mem(munchExp(binOp.left), null, null, ((TreeExpCONST) binOp.right).value);
-                        }
-                    } else {
-                        if (binOp.left instanceof TreeExpOP) {
-                            src = calcIndexScaleOp((TreeExpOP) binOp.left, binOp.right);
-                        } else if (binOp.right instanceof TreeExpOP) {
-                            src = calcIndexScaleOp((TreeExpOP) binOp.right, binOp.left);
-                        } else {
-                            src = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
-                        }
-                    }
-                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), src));
-                } else {
-                    throw new IllegalArgumentException("Invalid Memory Address mode");
-                }
+            List<Temp> callerSavedReversed = new ArrayList<>(x86Frame.CALLER_SAVED);
+            Collections.reverse(callerSavedReversed);
+
+            //restore caller saved regs
+            for (Temp callerSaved : callerSavedReversed) {
+                emit(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(callerSaved)));
             }
 
             return reg;
         }
 
-        private Operand calcIndexScaleOp(TreeExpOP indexScale, TreeExp base) {
-            if (indexScale.op != TreeExpOP.Op.MUL) {
-                throw new IllegalArgumentException("invalid MEMORY Address mode");
-            }
+        private Temp munchExp(TreeExpMEM exp) {
+            Operand src;
+            if (exp.addr instanceof TreeExpTEMP) {
+                return ((TreeExpTEMP) exp.addr).temp;
+            } else if (exp.addr instanceof TreeExpOP) {
+                TreeExpOP binOp = (TreeExpOP) exp.addr;
 
-            int scale;
-            Temp index;
-
-            if (indexScale.left instanceof TreeExpCONST) {
-                scale = ((TreeExpCONST) indexScale.left).value;
-                index = munchExp(indexScale.right);
+                if (binOp.op == TreeExpOP.Op.PLUS) {
+                    if (binOp.left instanceof TreeExpCONST) {
+                        src = new Operand.Mem(munchExp(binOp.right), null, null, ((TreeExpCONST) binOp.left).value);
+                    } else if (binOp.right instanceof TreeExpCONST) {
+                        src = new Operand.Mem(munchExp(binOp.left), null, null, ((TreeExpCONST) binOp.right).value);
+                    } else {
+                        src = new Operand.Mem(munchExp(binOp.left), null, munchExp(binOp.right), 0);
+                    }
+                } else {
+                    throw new IllegalArgumentException("Invalid Access Mode");
+                }
             } else {
-                scale = ((TreeExpCONST) indexScale.right).value;
-                index = munchExp(indexScale.left);
+                src = new Operand.Mem(munchExp(exp.addr));
             }
 
-            return new Operand.Mem(munchExp(base), scale, index, 0);
+            Temp reg = new Temp();
+            emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), src));
+            return reg;
         }
 
         private Temp munchExp(TreeExpTEMP exp) {
-            return exp.temp;
+            Temp reg = new Temp();
+            emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(exp.temp)));
+            return reg;
         }
 
         private Temp munchExp(TreeExpCONST exp) {

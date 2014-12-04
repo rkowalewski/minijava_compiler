@@ -2,6 +2,7 @@ package main;
 
 import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
+import minijava.backend.dummymachine.DummyMachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.backend.i386.x86MachineSpecifics;
 import minijava.intermediate.Fragment;
@@ -77,8 +78,10 @@ public class Test {
                         System.exit(1);
                     }
 
+                    boolean usex86 = true;
+
                     //Intermediate Translation
-                    MachineSpecifics machineSpecifics = new x86MachineSpecifics();
+                    MachineSpecifics machineSpecifics = usex86 ? new x86MachineSpecifics() : new DummyMachineSpecifics();
                     IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
                     prg.accept(intermediateTranslation);
 
@@ -107,14 +110,24 @@ public class Test {
 
                                 scheduledFrags.add(scheduledBlocks);
 
-                                Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
+                                if (usex86) {
 
-                                asmFrags.add(assemList);
+//                                    for (TreeStm stm : ((FragmentProc<List<TreeStm>>)scheduledBlocks).body) {
+//                                        System.out.println(stm);
+//                                    }
+
+                                    Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
+
+                                    asmFrags.add(assemList);
+
+                                }
                             }
 
-//                            System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
-
-                            System.out.println(machineSpecifics.printAssembly(asmFrags));
+                            if (usex86) {
+                                System.out.println(machineSpecifics.printAssembly(asmFrags));
+                            } else {
+                                System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
+                            }
                         } else {
                             System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
 

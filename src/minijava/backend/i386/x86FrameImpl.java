@@ -45,10 +45,11 @@ public class x86FrameImpl implements x86Frame {
 
     @Override
     public TreeExp getParameter(int number) {
-        if (number >= paramCount) {
+        if (number >= paramCount || number < 0) {
             throw new IllegalArgumentException("cannot access param " + number);
         }
 
+        //return value
         return new TreeExpMEM(new TreeExpOP(TreeExpOP.Op.PLUS, new TreeExpCONST(4 * number + 8), new TreeExpTEMP(ebp)));
     }
 

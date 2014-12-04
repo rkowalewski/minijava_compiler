@@ -33,6 +33,9 @@ then
     javac "${1}" -d ${DEST_DIR};
     echo "Executing the binary...";
     "./${BINARY_FILE}" > ${BINARY_OUT};
+    java -classpath ${DEST_DIR} ${FILE};
+
+:<<'END'
     java -classpath ${DEST_DIR} ${FILE} > ${JAVA_OUT};
 
     diff ${BINARY_OUT} ${JAVA_OUT} > /dev/null 2>&1;
@@ -46,6 +49,7 @@ then
     else
       echo "diff command failed" 1>&2;
     fi
+END
   fi
 else
   echo "first argument must be a minijava program (see the minijava_examples directory)!";
