@@ -4,7 +4,7 @@ import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
 import minijava.backend.dummymachine.DummyMachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
-import minijava.backend.i386.x86MachineSpecifics;
+import minijava.backend.i386.I386MachineSpecifics;
 import minijava.intermediate.Fragment;
 import minijava.intermediate.canon.BasicBlock;
 import minijava.intermediate.canon.Canon;
@@ -78,10 +78,10 @@ public class Test {
                         System.exit(1);
                     }
 
-                    boolean usex86 = true;
+                    boolean doAssemble = true;
 
                     //Intermediate Translation
-                    MachineSpecifics machineSpecifics = usex86 ? new x86MachineSpecifics() : new DummyMachineSpecifics();
+                    MachineSpecifics machineSpecifics = doAssemble ? new I386MachineSpecifics() : new DummyMachineSpecifics();
                     IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
                     prg.accept(intermediateTranslation);
 
@@ -96,7 +96,7 @@ public class Test {
                             List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
                             List<Fragment<List<TreeStm>>> canonedFrags = new ArrayList<>();
 
-                            List<Fragment<List<Assem>>> asmFrags = new ArrayList<>();
+                            List<Fragment<List<Assem>>> assemblyFrags = new ArrayList<>();
 
                             for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
                                 //Canonicalize
@@ -106,25 +106,20 @@ public class Test {
                                 //Build Basic Blocks
                                 Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
                                 //Trace the Basic Blocks
-                                Fragment<List<TreeStm>> scheduledBlocks = fragBasicBlockList.accept(scheduler);
+                                Fragment<List<TreeStm>> fragScheduled = fragBasicBlockList.accept(scheduler);
 
-                                scheduledFrags.add(scheduledBlocks);
+                                scheduledFrags.add(fragScheduled);
 
-                                if (usex86) {
+                                if (doAssemble) {
 
-//                                    for (TreeStm stm : ((FragmentProc<List<TreeStm>>)scheduledBlocks).body) {
-//                                        System.out.println(stm);
-//                                    }
+                                    Fragment<List<Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
 
-                                    Fragment<List<Assem>> assemList = machineSpecifics.codeGen(scheduledBlocks);
-
-                                    asmFrags.add(assemList);
-
+                                    assemblyFrags.add(assemList);
                                 }
                             }
 
-                            if (usex86) {
-                                System.out.println(machineSpecifics.printAssembly(asmFrags));
+                            if (doAssemble) {
+                                System.out.println(machineSpecifics.printAssembly(assemblyFrags));
                             } else {
                                 System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
                             }

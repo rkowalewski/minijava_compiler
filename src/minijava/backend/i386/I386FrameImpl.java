@@ -13,7 +13,7 @@ import java.util.List;
  * User: kowa
  * Date: 11/26/14
  */
-public class x86FrameImpl implements x86Frame {
+public class I386FrameImpl implements I386Frame {
     private final Label name;
     private final List<Temp> locals;
     private final int paramCount;
@@ -21,13 +21,13 @@ public class x86FrameImpl implements x86Frame {
     private static int WORD_SIZE = 4;
     private static int PARAM_EBP_OFFSET = 8;
 
-    public x86FrameImpl(x86FrameImpl frame) {
+    public I386FrameImpl(I386FrameImpl frame) {
         this.name = frame.name;
         this.paramCount = 0;
         this.locals = new ArrayList<Temp>(frame.locals);
     }
 
-    public x86FrameImpl(Label name, int paramCount) {
+    public I386FrameImpl(Label name, int paramCount) {
         this.name = name;
         this.locals = new LinkedList<Temp>();
         this.paramCount = paramCount;
@@ -74,6 +74,6 @@ public class x86FrameImpl implements x86Frame {
 
     @Override
     public Frame clone() {
-        return new x86FrameImpl(this);
+        return new I386FrameImpl(this);
     }
 }

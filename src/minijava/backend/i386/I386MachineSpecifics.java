@@ -11,7 +11,7 @@ import java.util.List;
  * User: kowa
  * Date: 11/26/14
  */
-public class x86MachineSpecifics implements MachineSpecifics {
+public class I386MachineSpecifics implements MachineSpecifics {
 
     @Override
     public int getWordSize() {
@@ -30,7 +30,7 @@ public class x86MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Frame newFrame(Label name, int paramCount) {
-        return new x86FrameImpl(name, paramCount);
+        return new I386FrameImpl(name, paramCount);
     }
 
     @Override
@@ -40,7 +40,7 @@ public class x86MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Fragment<List<Assem>> codeGen(Fragment<List<TreeStm>> frag) {
-        return frag.accept(new x86CodegenVisitor());
+        return frag.accept(new I386CodegenVisitor());
     }
 
     @Override

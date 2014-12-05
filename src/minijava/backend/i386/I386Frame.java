@@ -10,7 +10,7 @@ import java.util.List;
  * User: kowa
  * Date: 12/2/14
  */
-public interface x86Frame extends Frame {
+public interface I386Frame extends Frame {
     //Caller-Save Registers
     static final Temp eax = new Temp("eax");
     static final Temp ecx = new Temp("ecx");

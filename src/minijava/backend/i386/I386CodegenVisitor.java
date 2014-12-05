@@ -12,26 +12,26 @@ import java.util.List;
  * User: kowa
  * Date: 11/25/14
  */
-public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragment<List<Assem>>> {
+public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragment<List<Assem>>> {
     private static List<Assem> prologue = new ArrayList<>();
     private static List<Assem> epilogue = new ArrayList<>();
 
     static {
-        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(x86Frame.ebp)));
-        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.ebp), new Operand.Reg(x86Frame.esp)));
+        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
+        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
 
-        for (Temp calleeSaved : x86Frame.CALLEE_SAVED) {
+        for (Temp calleeSaved : I386Frame.CALLEE_SAVED) {
             prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(calleeSaved)));
         }
 
-        List<Temp> calleeReverse = new ArrayList<>(x86Frame.CALLEE_SAVED);
+        List<Temp> calleeReverse = new ArrayList<>(I386Frame.CALLEE_SAVED);
         Collections.reverse(calleeReverse);
 
         for (Temp calleeSaved : calleeReverse) {
             epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(calleeSaved)));
         }
-        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.esp), new Operand.Reg(x86Frame.ebp)));
-        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(x86Frame.ebp)));
+        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
+        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
         epilogue.add(new AssemInstr(AssemInstr.Kind.RET));
     }
 
@@ -42,7 +42,7 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
 
         ArrayList<TreeStm> treeStms = new ArrayList<>(fragProc.body);
 
-        AssemProcessor assemProcessor = new AssemProcessor((x86Frame) fragProc.frame);
+        AssemProcessor assemProcessor = new AssemProcessor();
 
         for (int i = 0; i < treeStms.size(); i++) {
             assemList.addAll(assemProcessor.munchStm(treeStms.get(i)));
@@ -57,12 +57,7 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
     }
 
     private static class AssemProcessor {
-        private final x86Frame x86Frame;
         private List<Assem> resultList = new ArrayList<>();
-
-        private AssemProcessor(x86Frame x86Frame) {
-            this.x86Frame = x86Frame;
-        }
 
         public List<Assem> munchStm(TreeStm stm) {
             this.resultList = new ArrayList<>();
@@ -283,9 +278,9 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
                 emit(new AssemBinaryOp(binaryOp, new Operand.Reg(reg), right));
                 return reg;
             } else {
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(x86Frame.eax), new Operand.Reg(reg)));
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.eax), new Operand.Reg(reg)));
                 emit(new AssemUnaryOp(unaryOp, right));
-                return x86Frame.eax;
+                return I386Frame.eax;
             }
         }
 
@@ -293,7 +288,7 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
             Label fnLabel = ((TreeExpNAME) exp.func).label;
 
             //save caller-saved registers
-            for (Temp callerSaved : x86Frame.CALLER_SAVED) {
+            for (Temp callerSaved : I386Frame.CALLER_SAVED) {
                 emit(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(callerSaved)));
             }
 
@@ -305,14 +300,14 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
             emit(new AssemJump(AssemJump.Kind.CALL, fnLabel));
 
             if (exp.args.size() > 0) {
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.ADD, new Operand.Reg(x86Frame.esp), new Operand.Imm(exp.args.size() * 4)));
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.ADD, new Operand.Reg(I386Frame.esp), new Operand.Imm(exp.args.size() * 4)));
             }
 
             Temp reg = new Temp();
 
-            emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(x86Frame.eax)));
+            emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(I386Frame.eax)));
 
-            List<Temp> callerSavedReversed = new ArrayList<>(x86Frame.CALLER_SAVED);
+            List<Temp> callerSavedReversed = new ArrayList<>(I386Frame.CALLER_SAVED);
             Collections.reverse(callerSavedReversed);
 
             //restore caller saved regs
