@@ -326,7 +326,7 @@ public class x86CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragmen
         private Temp munchExp(TreeExpMEM exp) {
             Operand src;
             if (exp.addr instanceof TreeExpTEMP) {
-                return ((TreeExpTEMP) exp.addr).temp;
+                src = new Operand.Mem(((TreeExpTEMP) exp.addr).temp);
             } else if (exp.addr instanceof TreeExpOP) {
                 TreeExpOP binOp = (TreeExpOP) exp.addr;
 
