@@ -275,7 +275,7 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
                 return new TreeExpCONST(c1.value * c2.value);
             }
             return new TreeExpCONST(c1.value / c2.value);
-        } else if (left instanceof TreeExpCONST && ((TreeExpCONST) left).value % 2 == 0) {
+        } else if (left instanceof TreeExpCONST && isPowerOfTwo(((TreeExpCONST) left).value)) {
             int val = log2(((TreeExpCONST) left).value);
 
             if (mul) {
@@ -283,7 +283,7 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
             }
 
             return new TreeExpOP(TreeExpOP.Op.RSHIFT, right, new TreeExpCONST(val));
-        } else if (right instanceof TreeExpCONST && ((TreeExpCONST) right).value % 2 == 0) {
+        } else if (right instanceof TreeExpCONST && isPowerOfTwo(((TreeExpCONST) right).value)) {
             int val = log2(((TreeExpCONST) right).value);
 
             if (mul) {
@@ -302,5 +302,9 @@ public class ExpTranslationVisitor implements ExpVisitor<TreeExp, RuntimeExcepti
 
     private int log2(int n) {
         return (int) (Math.log10(n) / Math.log10(2));
+    }
+
+    private boolean isPowerOfTwo(int n) {
+        return n > 0 && (n & (n-1)) == 0;
     }
 }

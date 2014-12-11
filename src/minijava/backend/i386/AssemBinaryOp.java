@@ -6,7 +6,7 @@ import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
 
-import java.util.List;
+import java.util.*;
 
 final class AssemBinaryOp implements Assem {
 
@@ -41,19 +41,34 @@ final class AssemBinaryOp implements Assem {
     }
 
     public List<Temp> use() {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+        List<Temp> useList = src.getRelevantRegsAlloc();
+
+        if (dst instanceof Operand.Mem) {
+            Set<Temp> useListSet = new HashSet<>(useList);
+
+            useListSet.addAll(dst.getRelevantRegsAlloc());
+
+            return new ArrayList<>(useListSet);
+        }
+
+        return useList;
     }
 
     public List<Temp> def() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (dst instanceof Operand.Reg) {
+            return Collections.singletonList(((Operand.Reg) dst).reg);
+        }
+
+        return Collections.emptyList();
     }
 
     public List<Label> jumps() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.emptyList();
     }
 
     public boolean isFallThrough() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return true;
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
@@ -61,7 +76,7 @@ final class AssemBinaryOp implements Assem {
     }
 
     public Label isLabel() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return null;
     }
 
     public String toString() {

@@ -40,7 +40,8 @@ public class I386MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Fragment<List<Assem>> codeGen(Fragment<List<TreeStm>> frag) {
-        return frag.accept(new I386CodegenVisitor());
+        FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) frag.accept(new I386CodegenVisitor());
+        return assemFrag;
     }
 
     @Override

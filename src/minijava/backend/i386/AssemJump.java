@@ -6,7 +6,7 @@ import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
 
-import java.util.List;
+import java.util.*;
 
 final class AssemJump implements Assem {
 
@@ -48,19 +48,23 @@ final class AssemJump implements Assem {
     }
 
     public List<Temp> use() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.emptyList();
     }
 
     public List<Temp> def() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return Collections.emptyList();
     }
 
     public List<Label> jumps() {
-        throw new UnsupportedOperationException("Not supported yet.");
+       if (kind != Kind.CALL && label != null) {
+           return Arrays.asList(label);
+       }
+
+        return Collections.emptyList();
     }
 
     public boolean isFallThrough() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return kind != Kind.JMP;
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
@@ -68,7 +72,7 @@ final class AssemJump implements Assem {
     }
 
     public Label isLabel() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return null;
     }
 
     public String toString() {

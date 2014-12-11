@@ -2,10 +2,11 @@ package main;
 
 import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
-import minijava.backend.dummymachine.DummyMachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.backend.i386.I386MachineSpecifics;
+import minijava.backend.regalloc.AssemFlowGraph;
 import minijava.intermediate.Fragment;
+import minijava.intermediate.FragmentProc;
 import minijava.intermediate.canon.BasicBlock;
 import minijava.intermediate.canon.Canon;
 import minijava.intermediate.canon.TraceSchedule;
@@ -20,8 +21,7 @@ import parser.Lexer;
 import parser.ParseException;
 import parser.Parser;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -78,10 +78,8 @@ public class Test {
                         System.exit(1);
                     }
 
-                    boolean doAssemble = true;
-
                     //Intermediate Translation
-                    MachineSpecifics machineSpecifics = doAssemble ? new I386MachineSpecifics() : new DummyMachineSpecifics();
+                    MachineSpecifics machineSpecifics = new I386MachineSpecifics();
                     IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
                     prg.accept(intermediateTranslation);
 
@@ -110,19 +108,13 @@ public class Test {
 
                                 scheduledFrags.add(fragScheduled);
 
-                                if (doAssemble) {
+                                Fragment<List<Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
+                                assemblyFrags.add(assemList);
 
-                                    Fragment<List<Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
-
-                                    assemblyFrags.add(assemList);
-                                }
+                                doRegAlloc(assemList, false);
                             }
 
-                            if (doAssemble) {
-                                System.out.println(machineSpecifics.printAssembly(assemblyFrags));
-                            } else {
-                                System.out.println(IntermediateToCmm.stmListFragmentsToCmm(scheduledFrags));
-                            }
+                            System.out.println(machineSpecifics.printAssembly(assemblyFrags));
                         } else {
                             System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
 
@@ -142,5 +134,33 @@ public class Test {
             ex.printStackTrace();
         }
 
+    }
+
+    private static void doRegAlloc(Fragment<List<Assem>> frag, boolean trace) {
+        FragmentProc<List<Assem>> fragProc = (FragmentProc<List<Assem>>) frag;
+        AssemFlowGraph graph = new AssemFlowGraph(fragProc.body);
+        graph.getInterenceGraph();
+
+        if (trace) {
+
+            File file = new File("/Users/kowa/Develop/projects/praktikum_compiler/temp/" + fragProc.frame.getName() + ".dot");
+
+            try (FileOutputStream fop = new FileOutputStream(file)) {
+
+                // if file doesn't exists, then create it
+                if (!file.exists()) {
+                    file.createNewFile();
+                }
+
+                // get the content in bytes
+                PrintStream ps = new PrintStream(fop);
+                graph.printDot(ps);
+                ps.flush();
+                ps.close();
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

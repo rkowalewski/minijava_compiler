@@ -53,7 +53,7 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
 
         assemList.add(0, new AssemLabel(fragProc.frame.getName()));
 
-        return new FragmentProc<>(fragProc.frame, assemList);
+        return new FragmentProc<>(fragProc.frame, Collections.unmodifiableList(assemList));
     }
 
     private static class AssemProcessor {
@@ -155,13 +155,6 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
             if (cjump.right instanceof TreeExpCONST) {
                 int value = ((TreeExpCONST) cjump.right).value;
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.CMP, new Operand.Reg(munchExp(cjump.left)), new Operand.Imm(value)));
-
-                //TODO: use this logic when the register allocator is working. The Register Simulator does not support it
-
-//                if (cjump.rel == TreeStmCJUMP.Rel.EQ && value == 0) {
-//                    emit(new AssemJump(AssemJump.Kind.J, cjump.ltrue, AssemJump.Cond.Z));
-//                    return;
-//                }
             } else {
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.CMP, new Operand.Reg(munchExp(cjump.left)), new Operand.Reg(munchExp(cjump.right))));
             }
@@ -191,7 +184,9 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
                     break;
             }
 
-            emit(new AssemJump(AssemJump.Kind.J, cjump.ltrue, condition));
+            AssemJump assemJump = new AssemJump(AssemJump.Kind.J, cjump.ltrue, condition);
+
+            emit(assemJump);
         }
 
         private void munchStm(TreeStmLABEL move) {
@@ -252,9 +247,11 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
                 case XOR:
                     binaryOp = AssemBinaryOp.Kind.XOR;
                     break;
-
+                case ARSHIFT:
+                    binaryOp = AssemBinaryOp.Kind.SAR;
+                    break;
                 default:
-                    throw new IllegalArgumentException("cannot handle operator: " + exp.op.toString());
+                    throw new IllegalArgumentException("cannot handle operator: " + exp.op);
             }
 
             Temp reg;
@@ -268,29 +265,38 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
 
             Operand right;
 
-            if (exp.right instanceof TreeExpCONST) {
+            //division with constants is not allowed...
+            if (exp.right instanceof TreeExpCONST && unaryOp == null) {
                 right = new Operand.Imm(((TreeExpCONST) exp.right).value);
             } else {
                 right = new Operand.Reg(munchExp(exp.right));
             }
 
             if (binaryOp != null) {
-                emit(new AssemBinaryOp(binaryOp, new Operand.Reg(reg), right));
+                if (right instanceof Operand.Imm && ((Operand.Imm) right).imm == 1) {
+                    if (binaryOp == AssemBinaryOp.Kind.ADD) {
+                        emit(new AssemUnaryOp(AssemUnaryOp.Kind.INC, new Operand.Reg(reg)));
+                    } else if (binaryOp == AssemBinaryOp.Kind.SUB) {
+                        emit(new AssemUnaryOp(AssemUnaryOp.Kind.DEC, new Operand.Reg(reg)));
+                    }
+                } else {
+                    emit(new AssemBinaryOp(binaryOp, new Operand.Reg(reg), right));
+                }
+
                 return reg;
             } else {
+                Temp target = new Temp();
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.eax), new Operand.Reg(reg)));
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edx), new Operand.Reg(I386Frame.eax)));
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.SAR, new Operand.Reg(I386Frame.edx), new Operand.Imm(31)));
                 emit(new AssemUnaryOp(unaryOp, right));
-                return I386Frame.eax;
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg((target)), new Operand.Reg(I386Frame.eax)));
+                return target;
             }
         }
 
         private Temp munchExp(TreeExpCALL exp) {
             Label fnLabel = ((TreeExpNAME) exp.func).label;
-
-            //save caller-saved registers
-            for (Temp callerSaved : I386Frame.CALLER_SAVED) {
-                emit(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(callerSaved)));
-            }
 
             //Push args in reverse order
             for (int i = exp.args.size() - 1; i > -1; i--) {
@@ -309,11 +315,6 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
 
             List<Temp> callerSavedReversed = new ArrayList<>(I386Frame.CALLER_SAVED);
             Collections.reverse(callerSavedReversed);
-
-            //restore caller saved regs
-            for (Temp callerSaved : callerSavedReversed) {
-                emit(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(callerSaved)));
-            }
 
             return reg;
         }
