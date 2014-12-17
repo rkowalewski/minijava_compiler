@@ -13,45 +13,36 @@ import java.util.List;
  * Date: 11/25/14
  */
 public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragment<List<Assem>>> {
-    private static List<Assem> prologue = new ArrayList<>();
-    private static List<Assem> epilogue = new ArrayList<>();
-
-    static {
-        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
-        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
-
-        for (Temp calleeSaved : I386Frame.CALLEE_SAVED) {
-            prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(calleeSaved)));
-        }
-
-        List<Temp> calleeReverse = new ArrayList<>(I386Frame.CALLEE_SAVED);
-        Collections.reverse(calleeReverse);
-
-        for (Temp calleeSaved : calleeReverse) {
-            epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(calleeSaved)));
-        }
-        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
-        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
-        epilogue.add(new AssemInstr(AssemInstr.Kind.RET));
-    }
 
     @Override
     public Fragment<List<Assem>> visit(FragmentProc<List<TreeStm>> fragProc) {
 
         List<Assem> assemList = new ArrayList<>();
 
+        assemList.add(new AssemLabel(fragProc.frame.getName()));
+
+        Temp ebx = new Temp();
+        Temp edi = new Temp();
+        Temp esi = new Temp();
+
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(ebx), new Operand.Reg(I386Frame.ebx)));
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(edi), new Operand.Reg(I386Frame.edi)));
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(esi), new Operand.Reg(I386Frame.esi)));
+
         ArrayList<TreeStm> treeStms = new ArrayList<>(fragProc.body);
 
         AssemProcessor assemProcessor = new AssemProcessor();
+
 
         for (int i = 0; i < treeStms.size(); i++) {
             assemList.addAll(assemProcessor.munchStm(treeStms.get(i)));
         }
 
-        assemList.addAll(0, prologue);
-        assemList.addAll(epilogue);
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebx), new Operand.Reg(ebx)));
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edi), new Operand.Reg(edi)));
+        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esi), new Operand.Reg(esi)));
 
-        assemList.add(0, new AssemLabel(fragProc.frame.getName()));
+        assemList.add(new AssemInstr(AssemInstr.Kind.RET));
 
         return new FragmentProc<>(fragProc.frame, Collections.unmodifiableList(assemList));
     }
@@ -285,6 +276,7 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
 
                 return reg;
             } else {
+                //must be mul or div
                 Temp target = new Temp();
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.eax), new Operand.Reg(reg)));
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edx), new Operand.Reg(I386Frame.eax)));

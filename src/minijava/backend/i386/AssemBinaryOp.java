@@ -57,7 +57,7 @@ final class AssemBinaryOp implements Assem {
 
     public List<Temp> def() {
         if (dst instanceof Operand.Reg) {
-            return Collections.singletonList(((Operand.Reg) dst).reg);
+            return dst.getRelevantRegsAlloc();
         }
 
         return Collections.emptyList();
@@ -72,7 +72,11 @@ final class AssemBinaryOp implements Assem {
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        if (kind == Kind.MOV && dst instanceof Operand.Reg && src instanceof Operand.Reg) {
+            return new Pair<>(((Operand.Reg) dst).reg, ((Operand.Reg) src).reg);
+        }
+
+        return null;
     }
 
     public Label isLabel() {

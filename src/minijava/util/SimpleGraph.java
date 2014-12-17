@@ -5,7 +5,7 @@ import java.util.*;
 
 public class SimpleGraph<NodeInfo> {
 
-  private final Set<Node> nodes = new HashSet<>();
+  private final Set<Node> nodes = new LinkedHashSet<>();
   private Map<Node, Set<Node>> successors = new HashMap<>();
   private Map<Node, Set<Node>> predecessors = new HashMap<>();
 

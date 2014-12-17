@@ -6,10 +6,7 @@ import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
 
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 final class AssemUnaryOp implements Assem {
 
@@ -18,15 +15,14 @@ final class AssemUnaryOp implements Assem {
         PUSH, POP, NEG, NOT, INC, DEC, IMUL, IDIV, ENTER
     }
 
-    private static final Collection<Kind> relevantUseDef = Arrays.asList(
-            Kind.NEG, Kind.NOT, Kind.INC, Kind.DEC, Kind.IMUL, Kind.IDIV
-    );
-
-
     private final Operand op;
     private final Kind kind;
 
     AssemUnaryOp(Kind kind, Operand op) {
+        if (kind == Kind.ENTER) {
+            throw new IllegalArgumentException("Do no use ENTER in assembly");
+        }
+
         assert ((kind == Kind.POP || kind == Kind.NEG || kind == Kind.NEG
                 || kind == Kind.INC || kind == Kind.DEC || kind == Kind.IDIV)
                 ? !(op instanceof Operand.Imm) : true);
@@ -36,15 +32,24 @@ final class AssemUnaryOp implements Assem {
     }
 
     public List<Temp> use() {
-        if (relevantUseDef.contains(this.kind) || this.kind == Kind.PUSH) {
-            return op.getRelevantRegsAlloc();
+        List<Temp> uses = new ArrayList<>();
+
+        if (kind == Kind.IMUL || kind == Kind.IDIV) {
+            uses.add(I386Frame.eax);
+            uses.add(I386Frame.edx);
         }
 
-        return Collections.emptyList();
+        if (kind != null && kind != Kind.POP) {
+            uses.addAll(op.getRelevantRegsAlloc());
+        }
+
+        return uses;
     }
 
     public List<Temp> def() {
-        if (relevantUseDef.contains(this.kind) || this.kind == Kind.POP) {
+        if (this.kind == Kind.IMUL || this.kind == Kind.IDIV) {
+            return Arrays.asList(I386Frame.edx, I386Frame.eax);
+        } else if (kind != null && kind != Kind.PUSH) {
             return op.getRelevantRegsAlloc();
         }
 
@@ -60,7 +65,7 @@ final class AssemUnaryOp implements Assem {
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return null;
     }
 
     public Label isLabel() {

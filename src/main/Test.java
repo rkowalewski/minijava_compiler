@@ -1,10 +1,10 @@
 package main;
 
-import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
 import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.backend.i386.I386MachineSpecifics;
 import minijava.backend.regalloc.AssemFlowGraph;
+import minijava.backend.regalloc.InterferenceGraph;
 import minijava.intermediate.Fragment;
 import minijava.intermediate.FragmentProc;
 import minijava.intermediate.canon.BasicBlock;
@@ -21,7 +21,8 @@ import parser.Lexer;
 import parser.ParseException;
 import parser.Parser;
 
-import java.io.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class Test {
                             List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
                             List<Fragment<List<TreeStm>>> canonedFrags = new ArrayList<>();
 
-                            List<Fragment<List<Assem>>> assemblyFrags = new ArrayList<>();
+                            List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
 
                             for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
                                 //Canonicalize
@@ -108,10 +109,10 @@ public class Test {
 
                                 scheduledFrags.add(fragScheduled);
 
-                                Fragment<List<Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
+                                Fragment<List<minijava.backend.Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
                                 assemblyFrags.add(assemList);
 
-                                doRegAlloc(assemList, false);
+                                doRegAlloc(assemList, true);
                             }
 
                             System.out.println(machineSpecifics.printAssembly(assemblyFrags));
@@ -136,31 +137,14 @@ public class Test {
 
     }
 
-    private static void doRegAlloc(Fragment<List<Assem>> frag, boolean trace) {
-        FragmentProc<List<Assem>> fragProc = (FragmentProc<List<Assem>>) frag;
+    private static void doRegAlloc(Fragment<List<minijava.backend.Assem>> frag, boolean trace) {
+        FragmentProc<List<minijava.backend.Assem>> fragProc = (FragmentProc<List<minijava.backend.Assem>>) frag;
         AssemFlowGraph graph = new AssemFlowGraph(fragProc.body);
-        graph.getInterenceGraph();
+        InterferenceGraph inter = graph.getInterenceGraph();
 
         if (trace) {
-
-            File file = new File("/Users/kowa/Develop/projects/praktikum_compiler/temp/" + fragProc.frame.getName() + ".dot");
-
-            try (FileOutputStream fop = new FileOutputStream(file)) {
-
-                // if file doesn't exists, then create it
-                if (!file.exists()) {
-                    file.createNewFile();
-                }
-
-                // get the content in bytes
-                PrintStream ps = new PrintStream(fop);
-                graph.printDot(ps);
-                ps.flush();
-                ps.close();
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            inter.printGraph(fragProc.frame.getName().toString());
         }
+
     }
 }

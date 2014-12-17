@@ -52,6 +52,12 @@ final class AssemJump implements Assem {
     }
 
     public List<Temp> def() {
+        if (kind == Kind.CALL) {
+            List<Temp> callerSaves = new ArrayList<>(I386Frame.CALLER_SAVED);
+            callerSaves.add(I386Frame.eax);
+            return callerSaves;
+        }
+
         return Collections.emptyList();
     }
 
@@ -68,7 +74,7 @@ final class AssemJump implements Assem {
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return null;
     }
 
     public Label isLabel() {

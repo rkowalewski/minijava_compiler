@@ -6,54 +6,57 @@ import minijava.intermediate.Temp;
 import minijava.util.Function;
 import minijava.util.Pair;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 final class AssemInstr implements Assem {
 
-  enum Kind {
+    enum Kind {
 
-    RET, LEAVE, NOP
-  }
-  private final Kind kind;
-
-  AssemInstr(Kind kind) {
-    this.kind = kind;
-  }
-
-  public List<Temp> use() {
-    if (kind == Kind.RET || kind == Kind.LEAVE) {
-        return Collections.singletonList(I386Frame.eax);
+        RET, LEAVE, NOP
     }
 
-      return Collections.emptyList();
-  }
+    private final Kind kind;
 
-  public List<Temp> def() {
-    return Collections.emptyList();
-  }
+    AssemInstr(Kind kind) {
+        this.kind = kind;
+    }
 
-  public List<Label> jumps() {
-    return Collections.emptyList();
-  }
+    public List<Temp> use() {
+        if (kind == Kind.RET || kind == Kind.LEAVE) {
+            List<Temp> uses = new ArrayList<>(I386Frame.CALLEE_SAVED);
+            uses.add(I386Frame.eax);
+            return uses;
+        }
+        return Collections.emptyList();
+    }
 
-  public boolean isFallThrough() {
-    return false;
-  }
+    public List<Temp> def() {
+        return Collections.emptyList();
+    }
 
-  public Pair<Temp, Temp> isMoveBetweenTemps() {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    public List<Label> jumps() {
+        return Collections.emptyList();
+    }
 
-  public Label isLabel() {
-    return null;
-  }
+    public boolean isFallThrough() {
+        return false;
+    }
 
-  public String toString() {
-      return "\t" + kind.toString().toLowerCase();
-  }
+    public Pair<Temp, Temp> isMoveBetweenTemps() {
+        return null;
+    }
 
-  public Assem rename(Function<Temp, Temp> sigma) {
-    throw new UnsupportedOperationException("Not supported yet.");
-  }
+    public Label isLabel() {
+        return null;
+    }
+
+    public String toString() {
+        return "\t" + kind.toString().toLowerCase();
+    }
+
+    public Assem rename(Function<Temp, Temp> sigma) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

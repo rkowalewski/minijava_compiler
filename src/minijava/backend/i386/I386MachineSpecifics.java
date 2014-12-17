@@ -5,6 +5,8 @@ import minijava.backend.MachineSpecifics;
 import minijava.intermediate.*;
 import minijava.intermediate.tree.TreeStm;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -58,7 +60,9 @@ public class I386MachineSpecifics implements MachineSpecifics {
             builder.append(".globl ").append(frameName).append("\n");
             builder.append(".type ").append(frameName).append(", ").append("@function\n");
 
-            for (Assem asm : fragProc.body) {
+            List<Assem> completeBody = addPrologueEpilogue(fragProc.body);
+
+            for (Assem asm : completeBody) {
 
                 String line = asm.toString();
 
@@ -75,5 +79,34 @@ public class I386MachineSpecifics implements MachineSpecifics {
         }
 
         return builder.toString();
+    }
+
+    private List<Assem> addPrologueEpilogue(List<Assem> body) {
+        List<Assem> completeBody = new ArrayList<>(body);
+
+        //Prologue
+        ArrayList<Temp> calleeSaved = new ArrayList<>(I386Frame.CALLEE_SAVED);
+        Collections.reverse(calleeSaved);
+
+        for (Temp temp : calleeSaved) {
+            completeBody.add(1, new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(temp)));
+        }
+
+        completeBody.add(1, new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
+        completeBody.add(1, new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
+
+        List<Assem> epilogueList = new ArrayList<>();
+
+        //Eplogue
+        for (Temp temp : calleeSaved) {
+            epilogueList.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(temp)));
+        }
+
+        epilogueList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
+        epilogueList.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
+
+        completeBody.addAll(completeBody.size()-1, epilogueList);
+
+        return completeBody;
     }
 }
