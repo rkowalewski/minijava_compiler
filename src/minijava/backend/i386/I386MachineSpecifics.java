@@ -82,6 +82,34 @@ public class I386MachineSpecifics implements MachineSpecifics {
     }
 
     private List<Assem> addPrologueEpilogue(List<Assem> body) {
+//        List<Assem> completeBody = new ArrayList<>(body);
+//        List<Assem> prologue = new ArrayList<>();
+//
+//        Temp ebx = new Temp();
+//        Temp edi = new Temp();
+//        Temp esi = new Temp();
+//
+//        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
+//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
+//
+//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(ebx), new Operand.Reg(I386Frame.ebx)));
+//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(edi), new Operand.Reg(I386Frame.edi)));
+//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(esi), new Operand.Reg(I386Frame.esi)));
+//
+//        List<Assem> epilogue = new ArrayList<>();
+//
+//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esi), new Operand.Reg(esi)));
+//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edi), new Operand.Reg(edi)));
+//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebx), new Operand.Reg(ebx)));
+//
+//
+//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
+//        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
+//
+//        completeBody.addAll(1, prologue);
+//        completeBody.addAll(completeBody.size() - 1, epilogue);
+
+//        return completeBody;
         List<Assem> completeBody = new ArrayList<>(body);
 
         //Prologue

@@ -18,29 +18,13 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
     public Fragment<List<Assem>> visit(FragmentProc<List<TreeStm>> fragProc) {
 
         List<Assem> assemList = new ArrayList<>();
-
         assemList.add(new AssemLabel(fragProc.frame.getName()));
-
-        Temp ebx = new Temp();
-        Temp edi = new Temp();
-        Temp esi = new Temp();
-
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(ebx), new Operand.Reg(I386Frame.ebx)));
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(edi), new Operand.Reg(I386Frame.edi)));
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(esi), new Operand.Reg(I386Frame.esi)));
-
-        ArrayList<TreeStm> treeStms = new ArrayList<>(fragProc.body);
 
         AssemProcessor assemProcessor = new AssemProcessor();
 
-
-        for (int i = 0; i < treeStms.size(); i++) {
-            assemList.addAll(assemProcessor.munchStm(treeStms.get(i)));
+        for (int i = 0; i < fragProc.body.size(); i++) {
+            assemList.addAll(assemProcessor.munchStm(fragProc.body.get(i)));
         }
-
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebx), new Operand.Reg(ebx)));
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edi), new Operand.Reg(edi)));
-        assemList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esi), new Operand.Reg(esi)));
 
         assemList.add(new AssemInstr(AssemInstr.Kind.RET));
 

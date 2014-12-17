@@ -92,27 +92,22 @@ public class Test {
                             BasicBlock basicBlocksBuilder = new BasicBlock();
                             TraceSchedule scheduler = new TraceSchedule();
 
-                            List<Fragment<List<TreeStm>>> scheduledFrags = new ArrayList<>();
-                            List<Fragment<List<TreeStm>>> canonedFrags = new ArrayList<>();
-
                             List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
 
                             for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
                                 //Canonicalize
                                 Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
-                                canonedFrags.add(canonicalized);
 
                                 //Build Basic Blocks
                                 Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
                                 //Trace the Basic Blocks
-                                Fragment<List<TreeStm>> fragScheduled = fragBasicBlockList.accept(scheduler);
+                                Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
 
-                                scheduledFrags.add(fragScheduled);
+                                //Code Generation
+                                Fragment<List<minijava.backend.Assem>> assemFrag = machineSpecifics.codeGen(scheduledFrag);
+                                assemblyFrags.add(assemFrag);
 
-                                Fragment<List<minijava.backend.Assem>> assemList = machineSpecifics.codeGen(fragScheduled);
-                                assemblyFrags.add(assemList);
-
-                                doRegAlloc(assemList, true);
+                                doRegAlloc(assemFrag, true);
                             }
 
                             System.out.println(machineSpecifics.printAssembly(assemblyFrags));
