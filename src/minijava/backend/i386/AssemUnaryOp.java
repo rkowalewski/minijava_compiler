@@ -77,6 +77,6 @@ final class AssemUnaryOp implements Assem {
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return new AssemUnaryOp(this.kind, op.rename(sigma));
     }
 }

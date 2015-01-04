@@ -1,12 +1,18 @@
 package minijava.backend.regalloc;
 
 import minijava.intermediate.Temp;
+import minijava.util.Pair;
+
+import java.util.*;
 
 /**
  * User: kowa
  * Date: 12/15/14
  */
-public class InterferenceGraph  extends PrintableGraph<Temp> {
+public class InterferenceGraph extends PrintableGraph<Temp> {
+
+    private final Map<Node, Integer> colorMap = new HashMap<>();
+    private final List<Move> moves = new ArrayList<>();
 
     public InterferenceGraph() {
         super();
@@ -15,29 +21,57 @@ public class InterferenceGraph  extends PrintableGraph<Temp> {
 
     public void addEdge(Temp src, Temp dst) {
 
-        Node nodeSrc = lookupNodeByTemp(src);
+        Node nodeSrc = nodeFor(src, true);
 
-        Node nodeDst = lookupNodeByTemp(dst);
+        Node nodeDst = nodeFor(dst, true);
 
         this.addEdge(nodeSrc, nodeDst);
     }
 
-    @Override
-    public void addEdge(Node src, Node dst) {
-        if (!(src != null && dst != null && src.successors().contains(dst))) {
-            super.addEdge(src, dst);
-        }
+    public void addMove(Pair<Temp, Temp> movePair) {
+        this.moves.add(new Move(nodeFor(movePair.fst, true), nodeFor(movePair.snd, true)));
     }
 
-    private Node lookupNodeByTemp(Temp temp) {
+    @Override
+    public void addEdge(Node src, Node dst) {
+        if (src == null || dst == null || src.successors().contains(dst)) {
+            return;
+        }
+
+        super.addEdge(src, dst);
+    }
+
+    public Node getNodeByTemp(Temp temp) {
+        return nodeFor(temp, false);
+    }
+
+    private Node nodeFor(Temp temp, boolean insert) {
         for (Node node : nodeSet()) {
             if (node.info.equals(temp)) {
                 return node;
             }
         }
 
-        return new Node(temp);
+        if (insert) {
+            return new Node(temp);
+        }
+
+        return null;
     }
+
+    public List<Move> getMoves() {
+        return Collections.unmodifiableList(moves);
+    }
+
+    public class Move {
+        public final Node src, dst;
+
+        public Move(Node dst, Node src) {
+            this.src = src;
+            this.dst = dst;
+        }
+    }
+
 
 
 }

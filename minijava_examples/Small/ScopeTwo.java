@@ -2,11 +2,11 @@
 
 class ScopeTwo {
     public static void main (String[] argv) {
-	System.out.println (new S().run(5, 10));
+	System.out.println (new SS().run(5, 10));
     }
 }
 
-class S {
+class SS {
 
     int n;
 

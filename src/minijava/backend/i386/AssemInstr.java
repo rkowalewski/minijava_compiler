@@ -57,6 +57,6 @@ final class AssemInstr implements Assem {
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return this;
     }
 }

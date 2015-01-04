@@ -90,6 +90,6 @@ final class AssemJump implements Assem {
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return this;
     }
 }

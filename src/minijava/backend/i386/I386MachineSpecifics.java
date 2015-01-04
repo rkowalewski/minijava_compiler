@@ -3,7 +3,9 @@ package minijava.backend.i386;
 import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
 import minijava.intermediate.*;
+import minijava.intermediate.tree.TreeExpCONST;
 import minijava.intermediate.tree.TreeStm;
+import minijava.util.FiniteFunction;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -22,12 +24,30 @@ public class I386MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Temp[] getAllRegisters() {
-        throw new UnsupportedOperationException("Registers allocation not supported.");
+        Temp[] allReg = new Temp[8];
+
+        List<Temp> regList = new ArrayList<>();
+        regList.addAll(I386Frame.CALLEE_SAVED);
+        regList.addAll(I386Frame.CALLER_SAVED);
+        regList.add(I386Frame.ebp);
+        regList.add(I386Frame.esp);
+
+        regList.toArray(allReg);
+
+        return allReg;
     }
 
     @Override
     public Temp[] getGeneralPurposeRegisters() {
-        throw new UnsupportedOperationException("Registers allocation not supported.");
+        Temp[] gpRegs = new Temp[6];
+
+        List<Temp> regList = new ArrayList<>();
+        regList.addAll(I386Frame.CALLEE_SAVED);
+        regList.addAll(I386Frame.CALLER_SAVED);
+
+        regList.toArray(gpRegs);
+
+        return gpRegs;
     }
 
     @Override
@@ -37,7 +57,31 @@ public class I386MachineSpecifics implements MachineSpecifics {
 
     @Override
     public List<Assem> spill(Frame frame, List<Assem> instrs, List<Temp> toSpill) {
-        throw new UnsupportedOperationException("Generic machine doesn't support assembly code!");
+        List<Assem> spilledBody = new ArrayList<>(instrs);
+        for (Temp temp : toSpill) {
+            int offset = ((TreeExpCONST) frame.addLocal(Frame.Location.IN_MEMORY)).value;
+
+            for (int i = 0; i < spilledBody.size(); i++) {
+                Assem instr = spilledBody.get(i);
+                Temp newTemp = new Temp();
+
+                Assem renamedInstr = instr.rename(new FiniteFunction<>(Collections.singletonMap(temp, newTemp)));
+
+                spilledBody.set(i, renamedInstr);
+
+                if (instr.use().contains(temp)) {
+                    spilledBody.add(i, new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(newTemp), new Operand.Mem(I386Frame.ebp, 0, null, 0 - offset)));
+                    i++;
+                }
+
+                if (instr.def().contains(temp)) {
+                    spilledBody.add(i + 1, new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Mem(I386Frame.ebp, 0, null, 0 - offset), new Operand.Reg(newTemp)));
+                    i++;
+                }
+            }
+        }
+
+        return spilledBody;
     }
 
     @Override
@@ -60,7 +104,7 @@ public class I386MachineSpecifics implements MachineSpecifics {
             builder.append(".globl ").append(frameName).append("\n");
             builder.append(".type ").append(frameName).append(", ").append("@function\n");
 
-            List<Assem> completeBody = addPrologueEpilogue(fragProc.body);
+            List<Assem> completeBody = addPrologueEpilogue(fragProc);
 
             for (Assem asm : completeBody) {
 
@@ -81,59 +125,23 @@ public class I386MachineSpecifics implements MachineSpecifics {
         return builder.toString();
     }
 
-    private List<Assem> addPrologueEpilogue(List<Assem> body) {
-//        List<Assem> completeBody = new ArrayList<>(body);
-//        List<Assem> prologue = new ArrayList<>();
-//
-//        Temp ebx = new Temp();
-//        Temp edi = new Temp();
-//        Temp esi = new Temp();
-//
-//        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
-//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
-//
-//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(ebx), new Operand.Reg(I386Frame.ebx)));
-//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(edi), new Operand.Reg(I386Frame.edi)));
-//        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(esi), new Operand.Reg(I386Frame.esi)));
-//
-//        List<Assem> epilogue = new ArrayList<>();
-//
-//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esi), new Operand.Reg(esi)));
-//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edi), new Operand.Reg(edi)));
-//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebx), new Operand.Reg(ebx)));
-//
-//
-//        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
-//        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
-//
-//        completeBody.addAll(1, prologue);
-//        completeBody.addAll(completeBody.size() - 1, epilogue);
+    private List<Assem> addPrologueEpilogue(FragmentProc<List<Assem>> frag) {
+        List<Assem> completeBody = new ArrayList<>(frag.body);
+        List<Assem> prologue = new ArrayList<>();
 
-//        return completeBody;
-        List<Assem> completeBody = new ArrayList<>(body);
-
-        //Prologue
-        ArrayList<Temp> calleeSaved = new ArrayList<>(I386Frame.CALLEE_SAVED);
-        Collections.reverse(calleeSaved);
-
-        for (Temp temp : calleeSaved) {
-            completeBody.add(1, new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(temp)));
+        prologue.add(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
+        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
+        if (frag.frame.size() > 0) {
+            prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.SUB, new Operand.Reg(I386Frame.esp), new Operand.Imm(frag.frame.size())));
         }
 
-        completeBody.add(1, new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebp), new Operand.Reg(I386Frame.esp)));
-        completeBody.add(1, new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(I386Frame.ebp)));
+        List<Assem> epilogue = new ArrayList<>();
 
-        List<Assem> epilogueList = new ArrayList<>();
+        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
+        epilogue.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
 
-        //Eplogue
-        for (Temp temp : calleeSaved) {
-            epilogueList.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(temp)));
-        }
-
-        epilogueList.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esp), new Operand.Reg(I386Frame.ebp)));
-        epilogueList.add(new AssemUnaryOp(AssemUnaryOp.Kind.POP, new Operand.Reg(I386Frame.ebp)));
-
-        completeBody.addAll(completeBody.size()-1, epilogueList);
+        completeBody.addAll(1, prologue);
+        completeBody.addAll(completeBody.size() - 1, epilogue);
 
         return completeBody;
     }

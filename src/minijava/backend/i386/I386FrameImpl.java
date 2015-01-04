@@ -17,9 +17,7 @@ public class I386FrameImpl implements I386Frame {
     private final Label name;
     private final List<Temp> locals;
     private final int paramCount;
-
-    private static int WORD_SIZE = 4;
-    private static int PARAM_EBP_OFFSET = 8;
+    private int frameSize = 0;
 
     public I386FrameImpl(I386FrameImpl frame) {
         this.name = frame.name;
@@ -55,9 +53,15 @@ public class I386FrameImpl implements I386Frame {
 
     @Override
     public TreeExp addLocal(Location l) {
-        Temp t = new Temp();
-        locals.add(t);
-        return new TreeExpTEMP(t);
+        if (l == Location.IN_MEMORY) {
+            //Increment the frame size when a variable has to be spilled
+            frameSize += 4;
+            return new TreeExpCONST(frameSize);
+        } else {
+            Temp t = new Temp();
+            locals.add(t);
+            return new TreeExpTEMP(t);
+        }
     }
 
     @Override
@@ -69,7 +73,7 @@ public class I386FrameImpl implements I386Frame {
 
     @Override
     public int size() {
-        return 0;
+        return frameSize;
     }
 
     @Override

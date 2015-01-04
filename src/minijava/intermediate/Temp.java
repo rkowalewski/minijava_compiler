@@ -4,18 +4,20 @@ public final class Temp implements Comparable<Temp> {
 
     private static int nextId = 0;
 
-    private String name = null;
     private final int id;
-    private boolean isSpecial = false;
+    private String name = null;
+    private boolean fixedColor;
 
     public Temp() {
         this.id = nextId++;
+        this.fixedColor = false;
     }
 
-    public Temp(String name) {
+    public Temp(final String regName) {
         this();
-        this.name = name;
-        this.isSpecial = true;
+        if (regName == null) throw new IllegalArgumentException("The name of a temp must not be null");
+        this.name = regName;
+        this.fixedColor = true;
     }
 
     public static void resetCounter() {
@@ -24,7 +26,7 @@ public final class Temp implements Comparable<Temp> {
 
     @Override
     public String toString() {
-        return this.name == null ? "t" + id : "%" + this.name;
+        return name == null ? "t" + id : "%" + name;
     }
 
     @Override
@@ -37,8 +39,8 @@ public final class Temp implements Comparable<Temp> {
         return id;
     }
 
-    public boolean isSpecial() {
-        return isSpecial;
+    public boolean isFixedColor() {
+        return fixedColor;
     }
 
     @Override

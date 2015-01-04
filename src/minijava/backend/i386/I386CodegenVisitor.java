@@ -5,7 +5,6 @@ import minijava.intermediate.*;
 import minijava.intermediate.tree.*;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -18,17 +17,46 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
     public Fragment<List<Assem>> visit(FragmentProc<List<TreeStm>> fragProc) {
 
         List<Assem> assemList = new ArrayList<>();
-        assemList.add(new AssemLabel(fragProc.frame.getName()));
+
+        ArrayList<TreeStm> treeStms = new ArrayList<>(fragProc.body);
 
         AssemProcessor assemProcessor = new AssemProcessor();
 
-        for (int i = 0; i < fragProc.body.size(); i++) {
-            assemList.addAll(assemProcessor.munchStm(fragProc.body.get(i)));
+        for (int i = 0; i < treeStms.size(); i++) {
+            assemList.addAll(assemProcessor.munchStm(treeStms.get(i)));
         }
 
-        assemList.add(new AssemInstr(AssemInstr.Kind.RET));
+        List<Assem> completeBody = saveAndRestoreCalleeSaves(assemList);
+        completeBody.add(0, new AssemLabel(fragProc.frame.getName()));
+        completeBody.add(new AssemInstr(AssemInstr.Kind.RET));
 
-        return new FragmentProc<>(fragProc.frame, Collections.unmodifiableList(assemList));
+
+        return new FragmentProc<>(fragProc.frame, completeBody);
+    }
+
+    private List<Assem> saveAndRestoreCalleeSaves(List<Assem> body) {
+        List<Assem> completeBody = new ArrayList<>(body);
+        List<Assem> prologue = new ArrayList<>();
+
+        Temp ebx = new Temp();
+        Temp edi = new Temp();
+        Temp esi = new Temp();
+
+        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(ebx), new Operand.Reg(I386Frame.ebx)));
+        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(edi), new Operand.Reg(I386Frame.edi)));
+        prologue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(esi), new Operand.Reg(I386Frame.esi)));
+
+        List<Assem> epilogue = new ArrayList<>();
+
+        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.ebx), new Operand.Reg(ebx)));
+        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edi), new Operand.Reg(edi)));
+        epilogue.add(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.esi), new Operand.Reg(esi)));
+
+
+        completeBody.addAll(0, prologue);
+        completeBody.addAll(epilogue);
+
+        return completeBody;
     }
 
     private static class AssemProcessor {
@@ -159,9 +187,7 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
                     break;
             }
 
-            AssemJump assemJump = new AssemJump(AssemJump.Kind.J, cjump.ltrue, condition);
-
-            emit(assemJump);
+            emit(new AssemJump(AssemJump.Kind.J, cjump.ltrue, condition));
         }
 
         private void munchStm(TreeStmLABEL move) {
@@ -226,21 +252,20 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
                     binaryOp = AssemBinaryOp.Kind.SAR;
                     break;
                 default:
-                    throw new IllegalArgumentException("cannot handle operator: " + exp.op);
+                    throw new IllegalArgumentException("cannot handle operator: " + exp.op.toString());
             }
 
-            Temp reg;
+            Temp leftReg;
 
             if (exp.left instanceof TreeExpMEM && exp.right instanceof TreeExpMEM) {
-                reg = new Temp();
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(munchExp(exp.left))));
+                leftReg = new Temp();
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(leftReg), new Operand.Reg(munchExp(exp.left))));
             } else {
-                reg = munchExp(exp.left);
+                leftReg = munchExp(exp.left);
             }
 
             Operand right;
 
-            //division with constants is not allowed...
             if (exp.right instanceof TreeExpCONST && unaryOp == null) {
                 right = new Operand.Imm(((TreeExpCONST) exp.right).value);
             } else {
@@ -248,23 +273,25 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
             }
 
             if (binaryOp != null) {
-                if (right instanceof Operand.Imm && ((Operand.Imm) right).imm == 1) {
-                    if (binaryOp == AssemBinaryOp.Kind.ADD) {
-                        emit(new AssemUnaryOp(AssemUnaryOp.Kind.INC, new Operand.Reg(reg)));
-                    } else if (binaryOp == AssemBinaryOp.Kind.SUB) {
-                        emit(new AssemUnaryOp(AssemUnaryOp.Kind.DEC, new Operand.Reg(reg)));
+                if (binaryOp == AssemBinaryOp.Kind.SUB || binaryOp == AssemBinaryOp.Kind.ADD) {
+                    if (right instanceof Operand.Imm && ((Operand.Imm) right).imm == 1) {
+                        unaryOp = binaryOp == AssemBinaryOp.Kind.ADD ? AssemUnaryOp.Kind.INC : AssemUnaryOp.Kind.DEC;
+                        emit(new AssemUnaryOp(unaryOp, new Operand.Reg(leftReg)));
+                        return leftReg;
                     }
-                } else {
-                    emit(new AssemBinaryOp(binaryOp, new Operand.Reg(reg), right));
                 }
-
-                return reg;
+                emit(new AssemBinaryOp(binaryOp, new Operand.Reg(leftReg), right));
+                return leftReg;
             } else {
                 //must be mul or div
                 Temp target = new Temp();
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.eax), new Operand.Reg(reg)));
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edx), new Operand.Reg(I386Frame.eax)));
-                emit(new AssemBinaryOp(AssemBinaryOp.Kind.SAR, new Operand.Reg(I386Frame.edx), new Operand.Imm(31)));
+                emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.eax), new Operand.Reg(leftReg)));
+
+                if (unaryOp == AssemUnaryOp.Kind.IDIV) {
+                    //cdq command
+                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(I386Frame.edx), new Operand.Reg(I386Frame.eax)));
+                    emit(new AssemBinaryOp(AssemBinaryOp.Kind.SAR, new Operand.Reg(I386Frame.edx), new Operand.Imm(31)));
+                }
                 emit(new AssemUnaryOp(unaryOp, right));
                 emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg((target)), new Operand.Reg(I386Frame.eax)));
                 return target;
@@ -276,7 +303,17 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
 
             //Push args in reverse order
             for (int i = exp.args.size() - 1; i > -1; i--) {
-                emit(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, new Operand.Reg(munchExp(exp.args.get(i)))));
+
+                TreeExp arg = exp.args.get(i);
+                Operand op;
+
+                if (arg instanceof TreeExpCONST) {
+                    op = new Operand.Imm(((TreeExpCONST) arg).value);
+                } else {
+                    op = new Operand.Reg(munchExp(arg));
+                }
+
+                emit(new AssemUnaryOp(AssemUnaryOp.Kind.PUSH, op));
             }
 
             emit(new AssemJump(AssemJump.Kind.CALL, fnLabel));
@@ -288,9 +325,6 @@ public class I386CodegenVisitor implements FragmentVisitor<List<TreeStm>, Fragme
             Temp reg = new Temp();
 
             emit(new AssemBinaryOp(AssemBinaryOp.Kind.MOV, new Operand.Reg(reg), new Operand.Reg(I386Frame.eax)));
-
-            List<Temp> callerSavedReversed = new ArrayList<>(I386Frame.CALLER_SAVED);
-            Collections.reverse(callerSavedReversed);
 
             return reg;
         }

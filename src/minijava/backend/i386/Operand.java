@@ -32,6 +32,23 @@ abstract class Operand {
         public List<Temp> getRelevantRegsAlloc() {
             return Collections.emptyList();
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Imm imm1 = (Imm) o;
+
+            if (imm != imm1.imm) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return imm;
+        }
     }
 
     final static class Reg extends Operand {
@@ -61,6 +78,23 @@ abstract class Operand {
             }
 
             return Collections.singletonList(reg);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Reg reg1 = (Reg) o;
+
+            if (!reg.equals(reg1.reg)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            return reg.hashCode();
         }
     }
 
@@ -114,11 +148,35 @@ abstract class Operand {
                 return String.format("DWORD PTR [%s + %s * %s + %s]", base, scale, index, displacement);
             } else if (index != null) {
                 return String.format("DWORD PTR [%s + %s + %s]", base, index, displacement);
-            } else if (displacement > 0) {
-                return String.format("DWORD PTR [%s + %s]", base, displacement);
+            } else if (displacement != 0) {
+                return String.format("DWORD PTR [%s %s %s]", base, displacement > 0 ? "+" : "-", Math.abs(displacement));
             } else {
                 return String.format("DWORD PTR [%s]", base);
             }
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Mem mem = (Mem) o;
+
+            if (displacement != mem.displacement) return false;
+            if (base != null ? !base.equals(mem.base) : mem.base != null) return false;
+            if (index != null ? !index.equals(mem.index) : mem.index != null) return false;
+            if (scale != null ? !scale.equals(mem.scale) : mem.scale != null) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = base != null ? base.hashCode() : 0;
+            result = 31 * result + (scale != null ? scale.hashCode() : 0);
+            result = 31 * result + (index != null ? index.hashCode() : 0);
+            result = 31 * result + displacement;
+            return result;
         }
     }
 

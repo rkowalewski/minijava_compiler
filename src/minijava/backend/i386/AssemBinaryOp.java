@@ -43,8 +43,13 @@ final class AssemBinaryOp implements Assem {
     public List<Temp> use() {
 
         List<Temp> useList = src.getRelevantRegsAlloc();
+        boolean isArithmetic = kind == Kind.ADD || kind == Kind.SUB || kind == Kind.SHL || kind == Kind.SAL || kind == Kind.SHR || kind == Kind.SAR;
+        boolean isLogical = kind == Kind.AND || kind == Kind.OR || kind == Kind.XOR;
+        boolean isCompare = kind == Kind.CMP || kind == Kind.TEST;
+        boolean usesBothOperands = isArithmetic || isLogical || isCompare || dst instanceof Operand.Mem;
 
-        if (dst instanceof Operand.Mem) {
+
+        if (usesBothOperands) {
             Set<Temp> useListSet = new HashSet<>(useList);
 
             useListSet.addAll(dst.getRelevantRegsAlloc());
@@ -56,7 +61,7 @@ final class AssemBinaryOp implements Assem {
     }
 
     public List<Temp> def() {
-        if (dst instanceof Operand.Reg) {
+        if (kind != Kind.CMP && kind != Kind.TEST && dst instanceof Operand.Reg) {
             return dst.getRelevantRegsAlloc();
         }
 
@@ -72,6 +77,7 @@ final class AssemBinaryOp implements Assem {
     }
 
     public Pair<Temp, Temp> isMoveBetweenTemps() {
+
         if (kind == Kind.MOV && dst instanceof Operand.Reg && src instanceof Operand.Reg) {
             return new Pair<>(((Operand.Reg) dst).reg, ((Operand.Reg) src).reg);
         }
@@ -88,6 +94,9 @@ final class AssemBinaryOp implements Assem {
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
-        throw new UnsupportedOperationException("Not supported yet.");
+
+        return new AssemBinaryOp(kind, this.dst.rename(sigma), this.src.rename(sigma));
     }
+
+
 }
