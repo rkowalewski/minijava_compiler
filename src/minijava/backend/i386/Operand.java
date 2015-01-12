@@ -72,8 +72,7 @@ abstract class Operand {
 
         @Override
         public List<Temp> getRelevantRegsAlloc() {
-            String regStr = reg.toString();
-            if ("%esp".equals(regStr) || "%ebp".equals(regStr)) {
+            if (I386Frame.esp.equals(reg) || I386Frame.ebp.equals(reg)) {
                 return Collections.emptyList();
             }
 
@@ -124,7 +123,7 @@ abstract class Operand {
         }
 
         private boolean isRelevantForRegAlloc(Temp t) {
-            return t != null && !("%esp".equals(t.toString()) || "%ebp".equals(t.toString()));
+            return t != null && !(I386Frame.esp.equals(t) || I386Frame.ebp.equals(t));
         }
 
         @Override

@@ -5,13 +5,13 @@ import java.util.*;
 
 public class SimpleGraph<NodeInfo> {
 
-    private final Set<Node> nodes = new LinkedHashSet<>();
+    private final Set<Node> nodes = new HashSet<>();
     private Map<Node, Set<Node>> successors = new HashMap<>();
     private Map<Node, Set<Node>> predecessors = new HashMap<>();
 
     public class Node {
 
-        public NodeInfo info;
+        public final NodeInfo info;
 
         private boolean active;
 
@@ -23,8 +23,12 @@ public class SimpleGraph<NodeInfo> {
             predecessors.put(this, new HashSet<Node>());
         }
 
-        public void toggleActive() {
-            this.active = !this.active;
+        public void setActive(boolean active) {
+            this.active = active;
+        }
+
+        public boolean isActive() {
+            return active;
         }
 
         /**
@@ -94,8 +98,6 @@ public class SimpleGraph<NodeInfo> {
         public int degree() {
             return inDegree() + outDegree();
         }
-
-
     }
 
     public Set<Node> nodeSet() {

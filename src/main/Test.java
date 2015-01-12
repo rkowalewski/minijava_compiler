@@ -7,7 +7,6 @@ import minijava.backend.i386.I386MachineSpecifics;
 import minijava.backend.regalloc.RegisterAllocator;
 import minijava.intermediate.Fragment;
 import minijava.intermediate.FragmentProc;
-import minijava.intermediate.Temp;
 import minijava.intermediate.canon.BasicBlock;
 import minijava.intermediate.canon.Canon;
 import minijava.intermediate.canon.TraceSchedule;
@@ -18,8 +17,6 @@ import minijava.semantic.visitor.ErrorMsg;
 import minijava.semantic.visitor.SymbolTableVisitor;
 import minijava.semantic.visitor.TypeCheckVisitor;
 import minijava.syntax.Prg;
-import minijava.util.FiniteFunction;
-import minijava.util.Function;
 import parser.Lexer;
 import parser.ParseException;
 import parser.Parser;
@@ -27,7 +24,6 @@ import parser.Parser;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Test {
@@ -108,9 +104,11 @@ public class Test {
                                 Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
 
                                 //generate assembly code
-                                Fragment<List<Assem>> assemFrag = generateAssembly(machineSpecifics, scheduledFrag);
+                                FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
 
-                                assemblyFrags.add(assemFrag);
+                                RegisterAllocator alloc = new RegisterAllocator(assemFrag.body, machineSpecifics, assemFrag.frame);
+
+                                assemblyFrags.add(alloc.doRegAlloc());
                             }
 
                             System.out.println(machineSpecifics.printAssembly(assemblyFrags));
@@ -133,36 +131,5 @@ public class Test {
             ex.printStackTrace();
         }
 
-    }
-
-    private static Fragment<List<Assem>> generateAssembly(MachineSpecifics machineSpecifics, Fragment<List<TreeStm>> scheduledFrag) {
-        FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
-
-        boolean isRegAllocSuccess = false;
-
-        while (!isRegAllocSuccess) {
-            RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, Arrays.asList(machineSpecifics.getGeneralPurposeRegisters()));
-            List<Temp> toSpill = registerAllocator.doRegAlloc();
-            if (toSpill.isEmpty()) {
-                isRegAllocSuccess = true;
-                Function<Temp, Temp> sigma = new FiniteFunction<>(registerAllocator.getRegisterMappings());
-
-                List<Assem> finalBody = new ArrayList<>();
-
-                for (Assem assem : assemFrag.body) {
-
-                    Assem renamed = assem.rename(sigma);
-
-                    finalBody.add(renamed);
-                }
-
-                assemFrag = new FragmentProc<>(assemFrag.frame, finalBody);
-            } else {
-                List<Assem> newBody = machineSpecifics.spill(assemFrag.frame, assemFrag.body, toSpill);
-                assemFrag = new FragmentProc<>(assemFrag.frame, newBody);
-            }
-        }
-
-        return assemFrag;
     }
 }

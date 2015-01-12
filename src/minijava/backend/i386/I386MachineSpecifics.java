@@ -107,7 +107,6 @@ public class I386MachineSpecifics implements MachineSpecifics {
             List<Assem> completeBody = addPrologueEpilogue(fragProc);
 
             for (Assem asm : completeBody) {
-
                 String line = asm.toString();
 
                 builder.append(line);

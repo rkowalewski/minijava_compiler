@@ -12,24 +12,30 @@ import java.util.*;
  * User: kowa
  * Date: 12/11/14
  */
-public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
+public class AssemFlowGraph extends PrintableGraph<Assem> {
+
+    private Set<Assem> moves = new HashSet<>();
 
     public AssemFlowGraph(List<minijava.backend.Assem> body) {
-        SimpleGraph.Node prev = null;
-        SimpleGraph.Node cur;
+        SimpleGraph<Assem>.Node prev = null;
+        SimpleGraph<Assem>.Node cur;
 
         //First: Put all instruction in graph add add edges
-        for (minijava.backend.Assem instr : body) {
+        for (Assem instr : body) {
             Pair<Temp, Temp> moveBetweenTemps = instr.isMoveBetweenTemps();
 
-            //Discard nodes where source and dest are the same
-            if (moveBetweenTemps != null && moveBetweenTemps.fst.equals(moveBetweenTemps.snd)) {
-                continue;
+            if (moveBetweenTemps != null) {
+                //Discard nodes where source equals dest
+                if (moveBetweenTemps.fst.equals(moveBetweenTemps.snd)) {
+                    continue;
+                } else {
+                    this.moves.add(instr);
+                }
             }
 
             cur = this.new Node(instr);
 
-            if (prev != null && ((minijava.backend.Assem) prev.info).isFallThrough()) {
+            if (prev != null && prev.info.isFallThrough()) {
                 this.addEdge(prev, cur);
             }
 
@@ -66,7 +72,6 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
                 for (Temp out : livenessInfo.liveOut.get(node)) {
                     if (!out.equals(moveBetweenTemps.snd)) {
                         ig.addEdge(moveBetweenTemps.fst, out);
-                        ig.addEdge(out, moveBetweenTemps.fst);
                     }
                 }
             } else {
@@ -74,7 +79,6 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
                 for (Temp def : node.info.def()) {
                     for (Temp out : livenessInfo.liveOut.get(node)) {
                         ig.addEdge(out, def);
-                        ig.addEdge(def, out);
                     }
                 }
             }
@@ -82,7 +86,11 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
         return ig;
     }
-    
+
+    public Set<Assem> getMoves() {
+        return Collections.unmodifiableSet(moves);
+    }
+
     protected List<Temp> defList(Node node) {
         return node.info.def();
     }
@@ -100,16 +108,15 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
             boolean isChanged = true;
 
-            List<Node> nodes = new ArrayList<>(nodeSet());
-
-            for (Node node : nodes) {
+            for (Node node : nodeSet()) {
                 liveIn.put(node, new HashSet<Temp>());
                 liveOut.put(node, new HashSet<Temp>());
             }
 
+            reverse();
+
             while (isChanged) {
-                for (int idx = nodes.size() - 1; idx >= 0; idx--) {
-                    Node node = nodes.get(idx);
+                for (Node node : nodeSet()) {
 
                     Set<Temp> out = internalLiveOut(node);
                     Set<Temp> in = internalLiveIn(node, out);
@@ -120,6 +127,8 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
                     liveOut.put(node, out);
                 }
             }
+
+            reverse();
         }
 
         private Set<Temp> internalLiveOut(SimpleGraph<Assem>.Node node) {

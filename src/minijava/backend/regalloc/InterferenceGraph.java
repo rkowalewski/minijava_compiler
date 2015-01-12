@@ -2,6 +2,7 @@ package minijava.backend.regalloc;
 
 import minijava.intermediate.Temp;
 import minijava.util.Pair;
+import minijava.util.SimpleGraph;
 
 import java.util.*;
 
@@ -9,27 +10,30 @@ import java.util.*;
  * User: kowa
  * Date: 12/15/14
  */
-public class InterferenceGraph extends PrintableGraph<Temp> {
+public class InterferenceGraph extends SimpleGraph<NodeInfo> {
 
-    private final Map<Node, Integer> colorMap = new HashMap<>();
-    private final List<Move> moves = new ArrayList<>();
+//    private final Set<Pair<Node, Node>> movePairs = new HashSet<>();
+    private final Set<Node> moveNodes = new HashSet<>();
 
     public InterferenceGraph() {
         super();
     }
 
 
-    public void addEdge(Temp src, Temp dst) {
-
+    public Pair<Node, Node> addEdge(Temp src, Temp dst) {
         Node nodeSrc = nodeFor(src, true);
-
         Node nodeDst = nodeFor(dst, true);
-
         this.addEdge(nodeSrc, nodeDst);
+        return new Pair<>(nodeSrc, nodeDst);
     }
 
     public void addMove(Pair<Temp, Temp> movePair) {
-        this.moves.add(new Move(nodeFor(movePair.fst, true), nodeFor(movePair.snd, true)));
+        Node dst = nodeFor(movePair.fst, true);
+        Node src = nodeFor(movePair.snd, true);
+
+        this.moveNodes.add(dst);
+        this.moveNodes.add(src);
+//        this.movePairs.add(new Pair(dst, src));
     }
 
     @Override
@@ -39,6 +43,7 @@ public class InterferenceGraph extends PrintableGraph<Temp> {
         }
 
         super.addEdge(src, dst);
+        super.addEdge(dst, src);
     }
 
     public Node getNodeByTemp(Temp temp) {
@@ -53,25 +58,13 @@ public class InterferenceGraph extends PrintableGraph<Temp> {
         }
 
         if (insert) {
-            return new Node(temp);
+            return new Node(new NodeInfo(temp));
         }
 
         return null;
     }
 
-    public List<Move> getMoves() {
-        return Collections.unmodifiableList(moves);
+    public Set<Node> getMoveNodes() {
+        return Collections.unmodifiableSet(moveNodes);
     }
-
-    public class Move {
-        public final Node src, dst;
-
-        public Move(Node dst, Node src) {
-            this.src = src;
-            this.dst = dst;
-        }
-    }
-
-
-
 }
