@@ -12,14 +12,16 @@ import java.util.*;
  * User: kowa
  * Date: 12/11/14
  */
-public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
+public class AssemFlowGraph extends PrintableGraph<Assem> {
+    private final List<Assem> body;
 
-    public AssemFlowGraph(List<minijava.backend.Assem> body) {
-        SimpleGraph.Node prev = null;
-        SimpleGraph.Node cur;
+    public AssemFlowGraph(List<Assem> body) {
+        SimpleGraph<Assem>.Node prev = null;
+        SimpleGraph<Assem>.Node cur;
+        this.body = Collections.unmodifiableList(body);
 
         //First: Put all instruction in graph add add edges
-        for (minijava.backend.Assem instr : body) {
+        for (Assem instr : body) {
             Pair<Temp, Temp> moveBetweenTemps = instr.isMoveBetweenTemps();
 
             //Discard nodes where source and dest are the same
@@ -29,7 +31,7 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
             cur = this.new Node(instr);
 
-            if (prev != null && ((minijava.backend.Assem) prev.info).isFallThrough()) {
+            if (prev != null && prev.info.isFallThrough()) {
                 this.addEdge(prev, cur);
             }
 
@@ -38,12 +40,10 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
         //Second: add edges from all nodes with jumps to their targets
         for (Node src : this.nodeSet()) {
-            if (!src.info.jumps().isEmpty()) {
-                for (Label targetLabel : src.info.jumps()) {
-                    for (Node targetNode : this.nodeSet()) {
-                        if (targetLabel.equals(targetNode.info.isLabel())) {
-                            this.addEdge(src, targetNode);
-                        }
+            for (Label targetLabel : src.info.jumps()) {
+                for (Node targetNode : this.nodeSet()) {
+                    if (targetLabel.equals(targetNode.info.isLabel())) {
+                        this.addEdge(src, targetNode);
                     }
                 }
             }
@@ -53,6 +53,7 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
     public InterferenceGraph getInterenceGraph() {
         LivenessInfo livenessInfo = new LivenessInfo();
         livenessInfo.analyze();
+//        livenessInfo.print();
 
         InterferenceGraph ig = new InterferenceGraph();
 
@@ -82,15 +83,6 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
         return ig;
     }
-    
-    protected List<Temp> defList(Node node) {
-        return node.info.def();
-    }
-
-    protected List<Temp> useList(Node node) {
-        return node.info.use();
-    }
-
 
     private class LivenessInfo {
         private Map<Node, Set<Temp>> liveIn = new LinkedHashMap<>();
@@ -98,57 +90,115 @@ public class AssemFlowGraph extends PrintableGraph<minijava.backend.Assem> {
 
         public void analyze() {
 
-            boolean isChanged = true;
+            Map<Node, Set<Temp>> liveInP = new HashMap<>();
+            Map<Node, Set<Temp>> liveOutP = new HashMap<>();
 
-            List<Node> nodes = new ArrayList<>(nodeSet());
-
-            for (Node node : nodes) {
-                liveIn.put(node, new HashSet<Temp>());
+            for (Node node : nodeSet()) {
+                liveIn.put(node, new HashSet<>(node.info.use()));
                 liveOut.put(node, new HashSet<Temp>());
+                liveInP.put(node, new HashSet<Temp>());
+                liveOutP.put(node, new HashSet<Temp>());
             }
 
+            boolean isChanged = true;
+
+            int iter = 0;
+
             while (isChanged) {
-                for (int idx = nodes.size() - 1; idx >= 0; idx--) {
-                    Node node = nodes.get(idx);
+                iter ++;
 
-                    Set<Temp> out = internalLiveOut(node);
-                    Set<Temp> in = internalLiveIn(node, out);
+                for (AssemFlowGraph.Node node : nodeSet()) {
 
-                    isChanged = !(in.equals(liveIn.get(node)) && out.equals(liveOut.get(node)));
+                    liveInP.get(node).addAll(liveIn.get(node));
+                    liveOutP.get(node).addAll(liveOut.get(node));
 
-                    liveIn.put(node, in);
-                    liveOut.put(node, out);
+                    liveOut.get(node).addAll(internalLiveOut(node));
+                    liveIn.get(node).addAll(internalLiveIn(node));
+
+                }
+
+                isChanged = false;
+                for (AssemFlowGraph.Node node : nodeSet()) {
+                    if (!(liveInP.get(node).containsAll(liveIn.get(node)) && liveOutP.get(node).containsAll(liveOut.get(node)))) {
+                        isChanged = true;
+                        break;
+                    }
+                }
+            }
+
+//            System.out.println("Number of iterations: " + iter);
+        }
+
+        private void print() {
+            for (Assem instr : body) {
+                for (AssemFlowGraph.Node node : nodeSet()) {
+                    if (node.info == instr) {
+                        System.out.print(instr.toString() + "(live-out: " );
+                        for (Temp out : liveOut.get(node)) {
+                            System.out.print(out.toString() + ",");
+                        }
+                        System.out.println(")");
+                    }
                 }
             }
         }
 
         private Set<Temp> internalLiveOut(SimpleGraph<Assem>.Node node) {
             // out[n] = U_{s in succ[n]} in[s]
-            Set<Temp> liveOutTemps = new HashSet<>();
+            Set<Temp> liveOut = new HashSet<>();
 
             for (Node successor : node.successors()) {
-                liveOutTemps.addAll(this.liveIn.get(successor));
+                liveOut.addAll(liveIn.get(successor));
             }
 
-            return liveOutTemps;
-
+            return liveOut;
         }
 
-        private Set<Temp> internalLiveIn(SimpleGraph<Assem>.Node node, Set<Temp> liveOutList) {
-            // (out[n] - def[n])
-
-            Set<Temp> liveIn = new HashSet<>(liveOutList);
-
-            for (Temp temp : defList(node)) {
-                liveIn.remove(temp);
-            }
-
-            // use[n] U (out[n] - def[n])
-            for (Temp temp : useList(node)) {
-                liveIn.add(temp);
-            }
-
-            return liveIn;
+        private Set<Temp> internalLiveIn(SimpleGraph<Assem>.Node node) {
+            // (use[n] U (out[n] - def[n]))
+            Set<Temp> aux = new HashSet<>(liveOut.get(node));
+            aux.removeAll(node.info.def());
+            return aux;
         }
+    }
+
+    private class ReverseDFSOrder {
+        public Iterable<SimpleGraph<Assem>.Node> getElements() {
+            return Collections.unmodifiableList(postOrder);
+        }
+
+        private LinkedList<SimpleGraph<Assem>.Node> postOrder;
+        private final Map<Node, Boolean> marked;
+
+        public ReverseDFSOrder(SimpleGraph<Assem> graph) {
+            postOrder = new LinkedList<>();
+            marked = new HashMap<>();
+
+            for (SimpleGraph<Assem>.Node node : graph.nodeSet()) {
+                if (!isMarked(node)) {
+                    dfs(node);
+                }
+            }
+        }
+
+        private boolean isMarked(Node node) {
+            return marked.containsKey(node) && marked.get(node).booleanValue();
+        }
+
+        private void dfs(SimpleGraph<Assem>.Node node) {
+            marked.put(node, true);
+
+            for (SimpleGraph<Assem>.Node neigh : node.successors()) {
+                if (!isMarked(neigh)) {
+                    dfs(neigh);
+                }
+            }
+
+            postOrder.addFirst(node);
+        }
+
+
+
+
     }
 }

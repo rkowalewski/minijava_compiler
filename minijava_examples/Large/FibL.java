@@ -6,11 +6,11 @@
 
 class FibL {
     public static void main(String[] a){
-	System.out.println(new FibAux().nfib_lazy(15));
+	System.out.println(new FibAux1().nfib_lazy(15));
     }
 }
 
-class FibAux {
+class FibAux1 {
     public int nfib (int num){
 	int res ;
 	if (num < 2)

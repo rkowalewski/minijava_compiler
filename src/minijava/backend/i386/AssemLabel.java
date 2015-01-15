@@ -42,7 +42,7 @@ final class AssemLabel implements Assem {
     }
 
     public String toString() {
-        return label + ":\n";
+        return label + ":";
     }
 
     public Assem rename(Function<Temp, Temp> sigma) {
