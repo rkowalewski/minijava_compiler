@@ -13,12 +13,10 @@ import java.util.*;
  * Date: 12/11/14
  */
 public class AssemFlowGraph extends PrintableGraph<Assem> {
-    private final List<Assem> body;
 
     public AssemFlowGraph(List<Assem> body) {
         SimpleGraph<Assem>.Node prev = null;
         SimpleGraph<Assem>.Node cur;
-        this.body = Collections.unmodifiableList(body);
 
         //First: Put all instruction in graph add add edges
         for (Assem instr : body) {
@@ -53,7 +51,6 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
     public InterferenceGraph getInterenceGraph() {
         LivenessInfo livenessInfo = new LivenessInfo();
         livenessInfo.analyze();
-//        livenessInfo.print();
 
         InterferenceGraph ig = new InterferenceGraph();
 
@@ -102,10 +99,7 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
 
             boolean isChanged = true;
 
-            int iter = 0;
-
             while (isChanged) {
-                iter ++;
 
                 for (AssemFlowGraph.Node node : nodeSet()) {
 
@@ -126,21 +120,6 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
                 }
             }
 
-//            System.out.println("Number of iterations: " + iter);
-        }
-
-        private void print() {
-            for (Assem instr : body) {
-                for (AssemFlowGraph.Node node : nodeSet()) {
-                    if (node.info == instr) {
-                        System.out.print(instr.toString() + "(live-out: " );
-                        for (Temp out : liveOut.get(node)) {
-                            System.out.print(out.toString() + ",");
-                        }
-                        System.out.println(")");
-                    }
-                }
-            }
         }
 
         private Set<Temp> internalLiveOut(SimpleGraph<Assem>.Node node) {
