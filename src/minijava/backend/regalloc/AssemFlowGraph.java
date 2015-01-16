@@ -14,7 +14,10 @@ import java.util.*;
  */
 public class AssemFlowGraph extends PrintableGraph<Assem> {
 
+    private final List<Assem> body;
+
     public AssemFlowGraph(List<Assem> body) {
+        this.body = body;
         SimpleGraph<Assem>.Node prev = null;
         SimpleGraph<Assem>.Node cur;
 
@@ -99,9 +102,12 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
 
             boolean isChanged = true;
 
+            //reverse topological sort to speed up the liveness analysis
+            ReverseTopOrder reverseTopOrder = new ReverseTopOrder(AssemFlowGraph.this);
+
             while (isChanged) {
 
-                for (AssemFlowGraph.Node node : nodeSet()) {
+                for (AssemFlowGraph.Node node : reverseTopOrder.getElements()) {
 
                     liveInP.get(node).addAll(liveIn.get(node));
                     liveOutP.get(node).addAll(liveOut.get(node));
@@ -119,7 +125,6 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
                     }
                 }
             }
-
         }
 
         private Set<Temp> internalLiveOut(SimpleGraph<Assem>.Node node) {
@@ -141,7 +146,7 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
         }
     }
 
-    private class ReverseDFSOrder {
+    private class ReverseTopOrder {
         public Iterable<SimpleGraph<Assem>.Node> getElements() {
             return Collections.unmodifiableList(postOrder);
         }
@@ -149,7 +154,7 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
         private LinkedList<SimpleGraph<Assem>.Node> postOrder;
         private final Map<Node, Boolean> marked;
 
-        public ReverseDFSOrder(SimpleGraph<Assem> graph) {
+        public ReverseTopOrder(SimpleGraph<Assem> graph) {
             postOrder = new LinkedList<>();
             marked = new HashMap<>();
 
@@ -173,7 +178,7 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
                 }
             }
 
-            postOrder.addFirst(node);
+            postOrder.add(node);
         }
 
 

@@ -113,9 +113,6 @@ public class Test {
                                 //Instruction Preselection
                                 FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
 
-                                machineSpecifics.printAssembly(Collections.<Fragment<List<Assem>>>singletonList(assemFrag));
-//                                assemblyFrags.add(assemFrag);
-
                                 //generate assembly code
                                 RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
                                 Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
