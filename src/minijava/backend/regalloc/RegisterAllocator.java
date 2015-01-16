@@ -25,7 +25,6 @@ public class RegisterAllocator {
     private List<Assem> instructions;
     private InterferenceGraph graph;
     private final Map<Temp, Temp> registerMappings = new HashMap<>();
-    private boolean isFinished = false;
 
     public RegisterAllocator(List<Assem> instructions, Frame frame, MachineSpecifics machineSpecifics) {
         this.instructions = instructions;
@@ -180,9 +179,5 @@ public class RegisterAllocator {
 
             return o2.degree() - o1.degree();
         }
-    }
-
-    public Map<Temp, Temp> getRegisterMappings() {
-        return isFinished ? Collections.unmodifiableMap(registerMappings) : Collections.<Temp, Temp>emptyMap();
     }
 }
