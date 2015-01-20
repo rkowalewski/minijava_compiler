@@ -38,10 +38,10 @@ public class RegisterAllocator {
             build();
             makeWorkLists();
 
-            do {
+            while (!simplifyWorklist.isEmpty() || !spillCandidates.isEmpty()) {
                 simplify();
                 checkSpillCandidates();
-            } while (!simplifyWorklist.isEmpty() || !spillCandidates.isEmpty());
+            }
 
             select();
 
@@ -91,26 +91,27 @@ public class RegisterAllocator {
 
 
     private void checkSpillCandidates() {
-        if (!spillCandidates.isEmpty()) {
-            List<InterferenceGraph.Node> listToSort = new ArrayList<>(spillCandidates);
-            Collections.sort(listToSort, new NeighboursDegreeComparator());
 
-            //Push Node with highest Degree on Stack
-            InterferenceGraph.Node highestDegree = listToSort.get(0);
-            addToStack(highestDegree);
-            spillCandidates.remove(highestDegree);
+        if (spillCandidates.isEmpty()) return;
 
-            Iterator<InterferenceGraph.Node> itCandidates = spillCandidates.iterator();
+        List<InterferenceGraph.Node> listToSort = new ArrayList<>(spillCandidates);
+        Collections.sort(listToSort, new NeighboursDegreeComparator());
 
-            //Check if others can be simplified
-            while (itCandidates.hasNext()) {
-                InterferenceGraph.Node node = itCandidates.next();
-                if (node.degree() < this.machineSpecifics.getGeneralPurposeRegisters().length) {
-                    //add to worklist for simplify
-                    simplifyWorklist.add(node);
-                    //remove from spillCandidates
-                    itCandidates.remove();
-                }
+        //Push Node with highest Degree on Stack
+        InterferenceGraph.Node highestDegree = listToSort.get(0);
+        addToStack(highestDegree);
+        spillCandidates.remove(highestDegree);
+
+        Iterator<InterferenceGraph.Node> itCandidates = spillCandidates.iterator();
+
+        //Check if others can be simplified
+        while (itCandidates.hasNext()) {
+            InterferenceGraph.Node node = itCandidates.next();
+            if (node.degree() < this.machineSpecifics.getGeneralPurposeRegisters().length) {
+                //add to worklist for simplify
+                simplifyWorklist.add(node);
+                //remove from spillCandidates
+                itCandidates.remove();
             }
         }
 
