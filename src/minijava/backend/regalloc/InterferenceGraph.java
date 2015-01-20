@@ -34,15 +34,8 @@ public class InterferenceGraph extends PrintableGraph<Temp> {
 
     @Override
     public void addEdge(Node src, Node dst) {
-        if (src == null || dst == null || src.successors().contains(dst)) {
-            return;
-        }
-
         super.addEdge(src, dst);
-    }
-
-    public Node getNodeByTemp(Temp temp) {
-        return nodeFor(temp, false);
+        super.addEdge(dst, src);
     }
 
     private Node nodeFor(Temp temp, boolean insert) {

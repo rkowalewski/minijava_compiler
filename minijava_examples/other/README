@@ -1,0 +1,9 @@
+Die Ausgabe Mandelbrot.java kann als Bilddatei im PPM-Format
+interpretiert werden.
+   
+   javac Mandelbrot.java
+   java Mandelbrot > mandel.ppm
+   (mandel.ppm ist eine Bilddatei im PPM-Format und kann mit
+    gaengigen Programmen geoeffnet werden, z.B.:)
+   xdg-open mandel.ppm
+

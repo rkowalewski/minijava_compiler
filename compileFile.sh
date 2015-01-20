@@ -1,15 +1,13 @@
-#!/bin/zsh
+#!/bin/sh
 
-DEST_DIR="./temp/";
+DEST_DIR="./";
 COMPILED_SUFFIX=".s";
-BINARY_SUFFIX=".out";
-RUNTIME="./tree2c/runtime.c";
 
 if [[ -f $1 ]];
 then
   FILE="$(basename "$1" ".java")";
   COMPILED_FILE="${DEST_DIR}${FILE}${COMPILED_SUFFIX}";
-  java -cp target:./lib/java-cup-11a.jar main.Test $1 >! ${COMPILED_FILE};
+  java -cp target:./lib/java-cup-11a.jar main.Compiler $1 > ${COMPILED_FILE};
   STATUS="${?}";
 
   if [[ ${STATUS} -gt 0 ]];

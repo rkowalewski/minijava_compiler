@@ -26,7 +26,7 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Test {
+public class Compiler {
 
     public static void main(String[] args) {
 

@@ -67,7 +67,6 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
                 for (Temp out : livenessInfo.liveOut.get(node)) {
                     if (!out.equals(moveBetweenTemps.snd)) {
                         ig.addEdge(moveBetweenTemps.fst, out);
-                        ig.addEdge(out, moveBetweenTemps.fst);
                     }
                 }
             } else {
@@ -75,7 +74,6 @@ public class AssemFlowGraph extends PrintableGraph<Assem> {
                 for (Temp def : node.info.def()) {
                     for (Temp out : livenessInfo.liveOut.get(node)) {
                         ig.addEdge(out, def);
-                        ig.addEdge(def, out);
                     }
                 }
             }
