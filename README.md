@@ -1,5 +1,6 @@
 # Minijava Compiler Project #
-This is a minijava compiler written in java. The build and run instructions are the following:
+This is a minijava compiler written in java. The generated assembly code is for x86 Architectures and uses the Intel syntax.
+Build and run instructions are the following:
 
 ## Build ##
 ``` make
