@@ -8,6 +8,7 @@ import minijava.intermediate.tree.TreeStm;
 import minijava.util.FiniteFunction;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -24,15 +25,9 @@ public class I386MachineSpecifics implements MachineSpecifics {
 
     @Override
     public Temp[] getAllRegisters() {
-        Temp[] allReg = new Temp[8];
-
-        List<Temp> regList = new ArrayList<>();
-        regList.addAll(I386Frame.CALLEE_SAVED);
-        regList.addAll(I386Frame.CALLER_SAVED);
-        regList.add(I386Frame.ebp);
-        regList.add(I386Frame.esp);
-
-        regList.toArray(allReg);
+        Temp[] allReg = Arrays.copyOf(getGeneralPurposeRegisters(), 8);
+        allReg[6] = I386Frame.ebp;
+        allReg[7] = I386Frame.esp;
 
         return allReg;
     }
