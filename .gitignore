@@ -25,21 +25,3 @@ target/
 
 #project files
 temp/
-tree2c/Cmm.hi
-tree2c/Cmm.o
-tree2c/GRM.LOG
-tree2c/Lex.hi
-tree2c/Lex.hs
-tree2c/Lex.o
-tree2c/Main.hi
-tree2c/Main.o
-tree2c/Names.hi
-tree2c/Names.o
-tree2c/Parse.hi
-tree2c/Parse.hs
-tree2c/Parse.o
-tree2c/Tokens.hi
-tree2c/Tokens.o
-tree2c/Tree.hi
-tree2c/Tree.o
-tree2c/tree2c
