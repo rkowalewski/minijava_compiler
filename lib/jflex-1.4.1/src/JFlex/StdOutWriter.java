@@ -21,8 +21,9 @@
 package JFlex;
 
 
-import java.io.*;
-import java.awt.TextArea;
+import java.awt.*;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 
 
 /**

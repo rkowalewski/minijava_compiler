@@ -20,9 +20,9 @@
 
 package JFlex.tests;
 
-import junit.framework.TestCase;
 import JFlex.Out;
 import JFlex.PackEmitter;
+import junit.framework.TestCase;
 
 /**
  * PackEmitterTest

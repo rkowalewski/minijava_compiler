@@ -21,10 +21,10 @@
 package JFlex.tests;
 
 
-import java.io.File;
-
 import JFlex.Skeleton;
 import junit.framework.TestCase;
+
+import java.io.File;
 
 /**
  * SkeletonTest

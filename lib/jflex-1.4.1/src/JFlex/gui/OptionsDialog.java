@@ -20,14 +20,13 @@
 
 package JFlex.gui;
 
-import java.awt.*;
-import java.awt.event.*;
-
-import java.io.File;
-
 import JFlex.GeneratorException;
 import JFlex.Options;
 import JFlex.Skeleton;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.io.File;
 
 /**
  * A dialog for setting JFlex options

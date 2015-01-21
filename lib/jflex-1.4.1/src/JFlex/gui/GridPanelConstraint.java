@@ -19,7 +19,7 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 package JFlex.gui;
 
-import java.awt.Component;
+import java.awt.*;
 
 /**
  * Constraints for layout elements of GridLayout

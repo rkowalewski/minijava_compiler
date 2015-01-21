@@ -1,9 +1,10 @@
 package minijava.intermediate.canon;
 
-import java.util.LinkedList;
-import java.util.List;
 import minijava.intermediate.tree.*;
 import minijava.util.Pair;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class CanonStm implements TreeStmVisitor<List<TreeStm>> {
 

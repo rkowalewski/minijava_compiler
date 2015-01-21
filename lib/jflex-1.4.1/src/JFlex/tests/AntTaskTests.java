@@ -19,13 +19,12 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 package JFlex.tests;
 
-import java.io.File;
-import java.io.IOException;
-
 import JFlex.Options;
 import JFlex.anttask.JFlexTask;
-
 import junit.framework.TestCase;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Unit tests for the jflex ant task.

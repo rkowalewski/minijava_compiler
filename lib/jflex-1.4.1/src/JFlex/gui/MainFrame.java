@@ -23,9 +23,9 @@ package JFlex.gui;
 import JFlex.Main;
 import JFlex.Out;
 
-import java.io.File;
 import java.awt.*;
 import java.awt.event.*;
+import java.io.File;
 
 /**
  * JFlex main application frame (GUI mode only)

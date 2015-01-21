@@ -23,9 +23,12 @@
 package JFlex;
 
 import java_cup.runtime.Symbol;
-import java.util.Vector;
-import java.io.*;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.util.Stack;
+import java.util.Vector;
 
 /**
  * The lexer of JFlex.

@@ -21,13 +21,15 @@
 
 package JFlex.anttask;
 
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.BuildException;
-
 import JFlex.Main;
 import JFlex.Options;
+import org.apache.tools.ant.BuildException;
+import org.apache.tools.ant.Task;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.LineNumberReader;
 
 /**
  * JFlex task class

@@ -20,8 +20,8 @@
   > java Main test.txt
   where test.txt is an test input file for the calculator.
 */
-   
-import java.io.*;
+
+import java.io.FileReader;
    
 public class Main {
   static public void main(String argv[]) {    

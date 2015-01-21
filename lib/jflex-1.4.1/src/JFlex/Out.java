@@ -21,8 +21,8 @@
 package JFlex;
 
 
+import java.awt.*;
 import java.io.*;
-import java.awt.TextArea;
 
 
 /**

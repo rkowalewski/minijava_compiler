@@ -1,11 +1,15 @@
 package minijava.intermediate.canon;
 
-import minijava.intermediate.*;
+import minijava.intermediate.Fragment;
+import minijava.intermediate.FragmentProc;
+import minijava.intermediate.FragmentVisitor;
+import minijava.intermediate.Temp;
+import minijava.intermediate.tree.*;
+import minijava.util.Pair;
+
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import minijava.intermediate.tree.*;
-import minijava.util.Pair;
 
 public class Canon implements FragmentVisitor<TreeStm, Fragment<List<TreeStm>>> {
 

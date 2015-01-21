@@ -19,10 +19,14 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 
 package JFlex;
- 
-import java.io.*;
-import java.util.*;
+
 import JFlex.gui.MainFrame;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Vector;
 
 
 /**

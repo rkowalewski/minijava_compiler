@@ -20,7 +20,7 @@
 
 package JFlex;
 
-import java.util.*;
+import java.util.Vector;
 
 
 /** 

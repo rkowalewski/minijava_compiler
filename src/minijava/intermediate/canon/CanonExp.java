@@ -1,10 +1,11 @@
 package minijava.intermediate.canon;
 
 import minijava.intermediate.Temp;
-import java.util.LinkedList;
-import java.util.List;
 import minijava.intermediate.tree.*;
 import minijava.util.Pair;
+
+import java.util.LinkedList;
+import java.util.List;
 
 public class CanonExp implements TreeExpVisitor<Pair<List<TreeStm>, TreeExp>> {
 

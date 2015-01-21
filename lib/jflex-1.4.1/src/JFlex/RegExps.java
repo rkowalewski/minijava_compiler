@@ -19,7 +19,8 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * */
 package JFlex;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Vector;
 
 
 /**
