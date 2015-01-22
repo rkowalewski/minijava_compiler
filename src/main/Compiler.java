@@ -54,60 +54,45 @@ public class Compiler {
                 parseTree = parser.parse();
                 Prg prg = (Prg) parseTree.value;
 
+                //Building Symbol Table
                 SymbolTableVisitor symbolTableVisitor = new SymbolTableVisitor(symbolTable, errors);
                 prg.accept(symbolTableVisitor);
+                checkErrors(filename, errors, "building symbol table");
 
-                if (errors.size() > 0) {
-                    System.out.println(String.format("#errors in building symbol table of file %s: %d", filename, errors.size()));
-                    for (ErrorMsg msg : errors) {
-                        System.out.println(msg.getMsg());
-                    }
-                    System.exit(1);
-                } else {
-                    //Type Checking
-                    TypeCheckVisitor typeCheckVisitor = new TypeCheckVisitor(symbolTable, errors);
-                    prg.accept(typeCheckVisitor);
+                //Type Checking
+                TypeCheckVisitor typeCheckVisitor = new TypeCheckVisitor(symbolTable, errors);
+                prg.accept(typeCheckVisitor);
+                checkErrors(filename, errors, "type checking");
 
-                    if (errors.size() > 0) {
-                        System.out.println(String.format("#errors in type checking of file %s: %d", filename, errors.size()));
+                //Intermediate Code Translation
+                MachineSpecifics machineSpecifics = new I386MachineSpecifics();
+                IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
+                prg.accept(intermediateTranslation);
 
-                        for (ErrorMsg msg : errors) {
-                            System.out.println(msg.getMsg());
-                        }
+                Canon canon = new Canon();
+                BasicBlock basicBlocksBuilder = new BasicBlock();
+                TraceSchedule scheduler = new TraceSchedule();
 
-                        System.exit(1);
-                    }
+                List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
 
-                    //Intermediate Translation
-                    MachineSpecifics machineSpecifics = new I386MachineSpecifics();
-                    IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
-                    prg.accept(intermediateTranslation);
+                for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
+                    //Canonicalize
+                    Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
 
-                    Canon canon = new Canon();
-                    BasicBlock basicBlocksBuilder = new BasicBlock();
-                    TraceSchedule scheduler = new TraceSchedule();
+                    //Build Basic Blocks
+                    Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
+                    //Trace the Basic Blocks
+                    Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
 
-                    List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
+                    //Instruction Preselection
+                    FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
 
-                    for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
-                        //Canonicalize
-                        Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
+                    //generate assembly code
+                    RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
+                    Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
+                    assemblyFrags.add(finalFrag);
 
-                        //Build Basic Blocks
-                        Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
-                        //Trace the Basic Blocks
-                        Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
-
-                        //Instruction Preselection
-                        FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
-
-                        //generate assembly code
-                        RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
-                        Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
-                        assemblyFrags.add(finalFrag);
-
-                        System.out.println(machineSpecifics.printAssembly(assemblyFrags));
-                    }
+                    System.out.println(machineSpecifics.printAssembly(assemblyFrags));
                 }
             } finally {
                 inp.close();
@@ -117,6 +102,18 @@ public class Compiler {
             System.exit(1);
         } catch (Exception ex) {
             ex.printStackTrace();
+        }
+    }
+
+    private static void checkErrors(String filename, List<ErrorMsg> errors, String step) {
+        if (errors.size() > 0) {
+            System.out.println(String.format("#errors in %s of file %s: %d", step, filename, errors.size()));
+
+            for (ErrorMsg msg : errors) {
+                System.out.println(msg.getMsg());
+            }
+
+            System.exit(1);
         }
     }
 }
