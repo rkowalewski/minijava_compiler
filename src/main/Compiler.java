@@ -2,7 +2,6 @@ package main;
 
 import minijava.backend.Assem;
 import minijava.backend.MachineSpecifics;
-import minijava.backend.dummymachine.IntermediateToCmm;
 import minijava.backend.i386.I386MachineSpecifics;
 import minijava.backend.regalloc.RegisterAllocator;
 import minijava.intermediate.Fragment;
@@ -84,42 +83,30 @@ public class Compiler {
                     IntermediateTranslationVisitor intermediateTranslation = new IntermediateTranslationVisitor(symbolTable, machineSpecifics);
                     prg.accept(intermediateTranslation);
 
-                    if (!intermediateTranslation.getFragmentList().isEmpty()) {
-                        boolean doCanon = true;
+                    Canon canon = new Canon();
+                    BasicBlock basicBlocksBuilder = new BasicBlock();
+                    TraceSchedule scheduler = new TraceSchedule();
 
-                        if (doCanon) {
-                            Canon canon = new Canon();
-                            BasicBlock basicBlocksBuilder = new BasicBlock();
-                            TraceSchedule scheduler = new TraceSchedule();
+                    List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
 
-                            List<Fragment<List<minijava.backend.Assem>>> assemblyFrags = new ArrayList<>();
+                    for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
+                        //Canonicalize
+                        Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
 
-                            for (Fragment<TreeStm> frag : intermediateTranslation.getFragmentList()) {
-                                //Canonicalize
-                                Fragment<List<TreeStm>> canonicalized = frag.accept(canon);
+                        //Build Basic Blocks
+                        Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
+                        //Trace the Basic Blocks
+                        Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
 
-                                //Build Basic Blocks
-                                Fragment<BasicBlock.BasicBlockList> fragBasicBlockList = canonicalized.accept(basicBlocksBuilder);
-                                //Trace the Basic Blocks
-                                Fragment<List<TreeStm>> scheduledFrag = fragBasicBlockList.accept(scheduler);
+                        //Instruction Preselection
+                        FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
 
-                                //Instruction Preselection
-                                FragmentProc<List<Assem>> assemFrag = (FragmentProc<List<Assem>>) machineSpecifics.codeGen(scheduledFrag);
+                        //generate assembly code
+                        RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
+                        Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
+                        assemblyFrags.add(finalFrag);
 
-                                //generate assembly code
-                                RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
-                                Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
-                                assemblyFrags.add(finalFrag);
-                            }
-
-                            System.out.println(machineSpecifics.printAssembly(assemblyFrags));
-                        } else {
-                            System.out.println(IntermediateToCmm.stmFragmentsToCmm(intermediateTranslation.getFragmentList()));
-
-                        }
-
-                    } else {
-                        System.out.println("Empty Program!!");
+                        System.out.println(machineSpecifics.printAssembly(assemblyFrags));
                     }
                 }
             } finally {
