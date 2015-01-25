@@ -91,9 +91,9 @@ public class Compiler {
                     RegisterAllocator registerAllocator = new RegisterAllocator(assemFrag.body, assemFrag.frame, machineSpecifics);
                     Fragment<List<Assem>> finalFrag = new FragmentProc<>(assemFrag.frame, registerAllocator.doRegAlloc());
                     assemblyFrags.add(finalFrag);
-
-                    System.out.println(machineSpecifics.printAssembly(assemblyFrags));
                 }
+
+                System.out.println(machineSpecifics.printAssembly(assemblyFrags));
             } finally {
                 inp.close();
             }
